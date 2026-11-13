@@ -1,0 +1,1609 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>NEXUM — Your Work &amp; Growth App</title>
+<meta name="description" content="NEXUM is your personal work &amp; growth app — plan, watch, focus and reflect in one private studio with a living 3D world and generative music."/>
+<meta name="theme-color" content="#0a0a0a"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.webmanifest"/>
+<link rel="icon" href="icon.svg" type="image/svg+xml"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-font-smoothing:antialiased;height:100%}
+body{background:#0a0a0a;color:#111;font-family:'Onest',sans-serif;overflow-x:hidden;min-height:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+ul{list-style:none}
+img{display:block}
+canvas{display:block}
+input,select,textarea{font:inherit}
+:focus-visible{outline:2px solid #b15f2c;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:1920px){html{font-size:0.833333vw}}
+@media (max-width:1440px){html{font-size:1.111111vw}}
+@media (max-width:1024px){html{font-size:1.5625vw}}
+@media (max-width:640px){html{font-size:4.444444vw}}
+:root{
+  --ink:#0a0a0a; --muted:#8d8d8d; --line:#e6e5e2; --surface:#f1f0ee; --surface-2:#e3e2df;
+  --accent:#b15f2c; --accent-from:#cf8047; --accent-to:#97501f;
+}
+.micro{font-size:.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:rgba(17,17,17,.45)}
+.ic{display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ic.fill{fill:currentColor;stroke:none}
+
+/* ===== fixed 3D stage ===== */
+#stage3d{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ===== loader ===== */
+#loader{position:fixed;inset:0;z-index:120;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2rem;background:#0a0a0a;color:#fff;border-radius:0 0 2rem 2rem;transition:transform .75s cubic-bezier(.22,1,.36,1)}
+#loader.exit{transform:translateY(-101%)}
+.ld-brand{display:flex;align-items:center;gap:.625rem;font-weight:600;font-size:1.5rem}
+.ld-brand svg{width:1.875rem;height:1.875rem;color:#cf8047;fill:currentColor}
+.ld-tag{max-width:24ch;font-size:.875rem;color:rgba(255,255,255,.55);text-align:center}
+.ld-prog{width:min(22rem,72vw);display:flex;flex-direction:column;gap:.75rem}
+.ld-track{height:1px;background:rgba(255,255,255,.15)}
+#ldFill{height:100%;background:#cf8047;width:0%;transition:width .1s ease-out}
+.ld-row{display:flex;justify-content:space-between;font-size:.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.45)}
+#ldNum{color:rgba(255,255,255,.8);font-variant-numeric:tabular-nums}
+
+/* ===== gate (entrance) ===== */
+#gate{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 110% at 50% -10%,rgba(10,10,10,.35),rgba(10,10,10,.88) 70%);color:#fff;transition:opacity .9s,visibility .9s}
+#gate.gone{opacity:0;visibility:hidden;pointer-events:none}
+.gwrap{display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.25rem;padding:2rem;max-width:44rem}
+.gmicro{font-size:.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:.625rem}
+.gmicro::before,.gmicro::after{content:"";width:2.5rem;height:1px;background:rgba(255,255,255,.3)}
+.gtitle{font-size:2.6rem;font-weight:600;letter-spacing:-.02em;line-height:1.03}
+@media(min-width:640px){.gtitle{font-size:3.75rem}}
+.gsub{color:rgba(255,255,255,.65);font-size:.9375rem;max-width:38ch;line-height:1.6}
+.gwrap .pill{transform:scale(1);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.gwrap .pill:hover{transform:scale(1.05)}
+.ghint{font-size:.75rem;color:rgba(255,255,255,.4)}
+.gcorner{position:absolute;font-size:.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.35)}
+.gcorner.tl{top:1.5rem;left:1.5rem}.gcorner.tr{top:1.5rem;right:1.5rem}
+.gcorner.bl{bottom:1.5rem;left:1.5rem}.gcorner.br{bottom:1.5rem;right:1.5rem}
+.gstat{display:flex;gap:2rem;margin-top:.75rem}
+.gstat div{display:flex;flex-direction:column;gap:.25rem}
+.gstat b{font-size:1.25rem;font-weight:600}
+.gstat span{font-size:.625rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45)}
+
+/* ===== app shell ===== */
+#app{display:none;position:relative;z-index:1;min-height:100vh}
+body.ready #app{display:flex}
+#side{width:17.5rem;flex:none;background:#0a0a0a;color:#fff;display:flex;flex-direction:column;gap:.875rem;position:sticky;top:0;height:100vh;padding:1.5rem 1rem;overflow:auto}
+@media(max-width:1023px){#side{display:none}}
+.sbrand{display:flex;align-items:center;gap:.625rem;font-weight:600;font-size:1.125rem;padding:.25rem .5rem 1rem}
+.sbrand svg{width:1.25rem;height:1.25rem;color:#cf8047;fill:currentColor}
+.ni{display:flex;align-items:center;gap:.75rem;padding:.625rem .75rem;border-radius:.75rem;color:rgba(255,255,255,.62);font-size:.875rem;font-weight:500;transition:all .25s;width:100%;text-align:left}
+.ni:hover{color:#fff;background:rgba(255,255,255,.06)}
+.ni.on{color:#fff;background:rgba(255,255,255,.1)}
+.ni .ic{width:1.125rem;height:1.125rem;flex:none}
+.sside{margin-top:auto;display:flex;flex-direction:column;gap:.75rem}
+.musw{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);border-radius:1rem;padding:.875rem;display:flex;flex-direction:column;gap:.625rem}
+.musw .mrow{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.musname{font-size:.8125rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.musname small{display:block;font-size:.625rem;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4)}
+.mbtn{width:2.125rem;height:2.125rem;display:grid;place-items:center;border-radius:9999px;background:rgba(255,255,255,.1);color:#fff;transition:background .25s,transform .25s;flex:none}
+.mbtn:hover{background:rgba(255,255,255,.2);transform:scale(1.06)}
+.mbtn .ic{width:.875rem;height:.875rem}
+.vol{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:rgba(255,255,255,.25);border-radius:2px;cursor:pointer}
+.vol::-webkit-slider-thumb{-webkit-appearance:none;width:.75rem;height:.75rem;border-radius:50%;background:#cf8047;cursor:pointer}
+.streakmini{border:1px solid rgba(207,128,71,.35);background:linear-gradient(135deg,rgba(207,128,71,.16),rgba(151,80,31,.08));border-radius:1rem;padding:.875rem;display:flex;align-items:center;gap:.75rem}
+.streakmini b{font-size:1.5rem;font-weight:600;color:#cf8047;line-height:1}
+.streakmini span{font-size:.625rem;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.55)}
+#main{flex:1;min-width:0;position:relative}
+.view{display:none;min-height:100vh}
+.view.act{display:block}
+.vsolid{background:#fff}
+.vwrap{padding:2.5rem 2.75rem 5rem;max-width:80rem;width:100%;margin-inline:auto}
+@media(max-width:1023px){.vwrap{padding:1.25rem 1.25rem 6.5rem}}
+.vhead{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.5rem}
+.vk{display:inline-flex;align-items:center;gap:.5rem;font-size:.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.vk::before{content:"";width:.375rem;height:.375rem;border-radius:9999px;background:var(--accent)}
+.vhead h2{font-size:1.75rem;font-weight:600;letter-spacing:-.02em}
+@media(min-width:640px){.vhead h2{font-size:2rem}}
+.vhead .sub{font-size:.9375rem;color:rgba(17,17,17,.55);max-width:60ch;line-height:1.55}
+
+/* ===== home (transparent over 3D) ===== */
+#view-home{padding:3rem 2.75rem 5rem;color:#fff}
+@media(max-width:1023px){#view-home{padding:5.25rem 1.25rem 6.5rem}}
+.homegrid{display:grid;gap:1rem;grid-template-columns:repeat(12,1fr);max-width:78rem}
+.hg{background:rgba(10,10,10,.5);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);border-radius:1.5rem;padding:1.25rem;color:#fff}
+@media(min-width:640px){.hg{padding:1.5rem}}
+.g7{grid-column:span 12}.g5{grid-column:span 12}.g4{grid-column:span 12}.g8{grid-column:span 12}
+@media(min-width:900px){.g7{grid-column:span 7}.g5{grid-column:span 5}.g4{grid-column:span 4}.g8{grid-column:span 8}}
+.hhi{font-size:.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.5)}
+.hname{font-size:1.75rem;font-weight:600;letter-spacing:-.02em;margin-top:.25rem}
+@media(min-width:640px){.hname{font-size:2.125rem}}
+.hquote{margin-top:.75rem;font-size:.875rem;color:rgba(255,255,255,.65);line-height:1.55;max-width:44ch}
+.hbig{font-size:3rem;font-weight:600;line-height:1;color:#cf8047;font-variant-numeric:tabular-nums}
+.hlbl{font-size:.625rem;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.5)}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.hacts{display:flex;flex-wrap:wrap;gap:.625rem}
+.hstat3{display:flex;gap:1.75rem;margin-top:.875rem}
+.hstat3 div{display:flex;flex-direction:column;gap:.25rem}
+.hstat3 b{font-size:1.375rem;font-weight:600;font-variant-numeric:tabular-nums}
+.hstat3 span{font-size:.625rem;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5)}
+
+/* ===== mobile chrome ===== */
+#mtop{display:none;position:fixed;top:0;inset-inline:0;z-index:60;align-items:center;justify-content:space-between;background:rgba(10,10,10,.6);backdrop-filter:blur(12px);padding:.75rem 1rem;padding-top:calc(.75rem + env(safe-area-inset-top));color:#fff}
+@media(max-width:1023px){#mtop{display:flex}}
+#mtop .sbrand{padding:0;font-size:1rem}
+#mtop .sbrand svg{width:1rem;height:1rem}
+.mchip{width:2.25rem;height:2.25rem;display:grid;place-items:center;border-radius:9999px;background:rgba(255,255,255,.12);color:#fff;transition:transform .25s}
+.mchip:active{transform:scale(.92)}
+.mchip .ic{width:1rem;height:1rem}
+#tabbar{display:none;position:fixed;bottom:0;inset-inline:0;z-index:60;background:rgba(10,10,10,.94);backdrop-filter:blur(14px);border-top:1px solid rgba(255,255,255,.08);padding:.5rem .5rem calc(.5rem + env(safe-area-inset-bottom));justify-content:space-around}
+@media(max-width:1023px){#tabbar{display:flex}}
+.tb{display:flex;flex-direction:column;align-items:center;gap:.25rem;color:rgba(255,255,255,.55);font-size:.625rem;font-weight:500;padding:.25rem .625rem;transition:color .25s}
+.tb.on{color:#cf8047}
+.tb .ic{width:1.25rem;height:1.25rem}
+#moreSheet{position:fixed;inset:0;z-index:70;display:none;align-items:flex-end;justify-content:center;background:rgba(10,10,10,.5);backdrop-filter:blur(8px)}
+#moreSheet.open{display:flex}
+.mspanel{width:100%;max-width:32rem;background:#fff;border-radius:1.5rem 1.5rem 0 0;padding:.75rem .75rem calc(1rem + env(safe-area-inset-bottom));transform:translateY(24px);opacity:0;transition:all .35s cubic-bezier(.22,1,.36,1)}
+#moreSheet.open .mspanel{transform:none;opacity:1}
+.mstit{text-align:center;font-size:.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:rgba(17,17,17,.4);padding:.5rem 0 .75rem}
+.msgrid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.msitem{display:flex;align-items:center;gap:.75rem;padding:.875rem 1rem;border-radius:1rem;font-size:.875rem;font-weight:500;width:100%;text-align:left;background:var(--surface);transition:background .25s}
+.msitem:hover{background:var(--surface-2)}
+.msitem .ic{width:1.125rem;height:1.125rem;color:var(--accent);flex:none}
+</style>
+<style>
+/* ===== shared ui ===== */
+.card{background:var(--surface);border-radius:1.25rem;padding:1.25rem}
+@media(min-width:640px){.card{padding:1.5rem}}
+.grid2{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:860px){.grid2{grid-template-columns:1fr 1fr}}
+.pill{display:inline-flex;align-items:center;gap:.625rem;border-radius:9999px;font-size:.875rem;font-weight:500;transition:transform .35s cubic-bezier(.2,.8,.2,1),background .3s,color .3s,opacity .3s}
+.pill:hover{transform:scale(1.04)}
+.pill.dark{background:var(--ink);color:#fff}
+.pill.light{background:var(--surface);color:#111}
+.pill.outline{border:1px solid var(--line);color:inherit;background:transparent}
+.pill.plain{padding:.875rem 1.75rem}
+.pill.sm{padding:.5rem 1.125rem;font-size:.8125rem}
+.pill .badge{width:2.125rem;height:2.125rem;display:grid;place-items:center;border-radius:9999px;background:#fff;color:var(--ink);flex:none;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.pill:hover .badge{transform:translate(3px,0)}
+.pill .badge .ic{width:.875rem;height:.875rem}
+.inp{width:100%;border:1px solid var(--line);background:rgba(255,255,255,.7);border-radius:.875rem;padding:.75rem 1rem;font-size:.875rem;outline:none;transition:border-color .3s,background .3s}
+.inp:focus{border-color:rgba(17,17,17,.3);background:#fff}
+.addrow{display:flex;gap:.625rem;margin:1rem 0 1.25rem}
+.addrow .inp{flex:1;min-width:0}
+.empty{border:1px dashed var(--line);border-radius:1.25rem;padding:2rem 1.25rem;text-align:center;color:rgba(17,17,17,.45);font-size:.875rem}
+.ring{--p:0;width:6.5rem;height:6.5rem;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p)*1%),#e6e4e0 0);display:grid;place-items:center;transition:background .6s;flex:none}
+.ring i{width:5rem;height:5rem;background:var(--surface);border-radius:50%;display:grid;place-content:center;font-style:normal;line-height:1.15;text-align:center}
+.ring i b{font-weight:600;font-size:1.25rem}
+.ring i span{font-size:.625rem;text-transform:uppercase;letter-spacing:.05em;color:rgba(17,17,17,.45)}
+
+/* ===== plan ===== */
+.plangrid{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:860px){.plangrid{grid-template-columns:1.7fr 1fr}}
+.tlist{display:flex;flex-direction:column;gap:.5rem}
+.task{display:flex;align-items:center;gap:.875rem;background:#fff;border:1px solid var(--line);border-radius:1rem;padding:.875rem 1rem;font-size:.9375rem;transition:opacity .3s}
+.task.done{opacity:.5}
+.task.done .ttxt{text-decoration:line-through}
+.tchk{width:1.375rem;height:1.375rem;border-radius:9999px;border:1.5px solid #c9c8c4;display:grid;place-items:center;flex:none;cursor:pointer;color:transparent;font-size:.65rem;transition:all .25s}
+.task.done .tchk{background:var(--ink);border-color:var(--ink);color:#fff}
+.tdel{color:#b6b6b6;font-size:1.125rem;padding:.25rem .5rem;transition:color .3s;flex:none}
+.tdel:hover{color:#111}
+.ringwrap{display:flex;flex-direction:column;align-items:center;gap:.75rem;text-align:center;justify-content:center}
+
+/* ===== growth ===== */
+.growrow{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:900px){.growrow{grid-template-columns:1fr 2fr}}
+.streakcard{display:flex;flex-direction:column;align-items:flex-start;gap:.5rem}
+.bign{font-size:3.5rem;font-weight:600;letter-spacing:-.02em;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.vgrid{display:grid;gap:1rem;grid-template-columns:1fr}
+@media(min-width:640px){.vgrid{grid-template-columns:repeat(3,1fr)}}
+.vid{display:block;background:#fff;border:1px solid var(--line);border-radius:1.25rem;overflow:hidden;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.vid:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(10,10,10,.12)}
+.vid .th{aspect-ratio:16/9;background:var(--ink);display:grid;place-items:center;overflow:hidden}
+.vid .th .ic{width:2.25rem;height:2.25rem;color:#cf8047}
+.vid .th img{width:100%;height:100%;object-fit:cover}
+.vid .vb{padding:1rem;display:flex;flex-direction:column;gap:.375rem}
+.vid .vb b{font-size:.9375rem;font-weight:500;line-height:1.35}
+.hvcard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14)}
+.hvcard .vb{color:#fff}
+.hvcard:hover{box-shadow:0 18px 40px rgba(0,0,0,.4)}
+
+/* ===== library ===== */
+.tabs{display:inline-flex;gap:.375rem;background:var(--surface);border-radius:9999px;padding:.25rem;margin-bottom:1rem}
+.tab{border-radius:9999px;padding:.5rem 1.25rem;font-size:.875rem;font-weight:500;color:rgba(17,17,17,.5);transition:all .3s}
+.tab.on{background:var(--ink);color:#fff}
+.plgrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))}
+.plitem{position:relative;border-radius:1.25rem;overflow:hidden;background:var(--ink);color:#fff}
+.plitem img{width:100%;aspect-ratio:16/9;object-fit:cover;opacity:.85;transition:opacity .3s,transform .5s}
+.plitem:hover img{opacity:1;transform:scale(1.04)}
+.plitem .pbody{padding:.875rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.plitem .pbody b{font-size:.8125rem;font-weight:500;line-height:1.3;display:block}
+.plitem .plink{display:block}
+.pdel{width:1.75rem;height:1.75rem;display:grid;place-items:center;border-radius:9999px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:.875rem;flex:none}
+.pdel:hover{background:rgba(255,255,255,.25);color:#fff}
+.pbig{display:grid;place-items:center;aspect-ratio:16/9;background:linear-gradient(135deg,#cf8047,#97501f);font-size:2rem}
+
+/* ===== schedule ===== */
+.rem{display:flex;align-items:center;gap:1rem;border:1px solid var(--line);border-radius:1rem;padding:.875rem 1rem;background:#fff}
+.rem .rtime{font-variant-numeric:tabular-nums;font-weight:600;font-size:.9375rem;color:var(--accent);flex:none;min-width:4.25rem}
+.rem .rtxt{flex:1;font-size:.9375rem;min-width:0}
+.rem.off .rtxt,.rem.off .rtime{opacity:.4;text-decoration:line-through}
+.sw{width:2.5rem;height:1.375rem;border-radius:9999px;background:#d9d8d4;position:relative;cursor:pointer;transition:background .3s;flex:none}
+.sw::after{content:"";position:absolute;top:.1875rem;left:.1875rem;width:1rem;height:1rem;border-radius:50%;background:#fff;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw.on{background:var(--ink)}
+.sw.on::after{transform:translateX(1.125rem)}
+
+/* ===== focus ===== */
+.focuswrap{display:grid;gap:1.75rem;grid-template-columns:1fr;align-items:center}
+@media(min-width:860px){.focuswrap{grid-template-columns:1fr 1fr}}
+.fbig{display:flex;flex-direction:column;align-items:center;gap:1.25rem}
+#focusTime{font-size:4.25rem;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.fchips{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center}
+.fchip{border:1px solid var(--line);border-radius:9999px;padding:.5rem 1.25rem;font-size:.875rem;font-weight:500;color:rgba(17,17,17,.6);transition:all .3s}
+.fchip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.fbtns{display:flex;gap:.625rem;flex-wrap:wrap;justify-content:center}
+.ritem{display:flex;gap:.75rem;padding:.625rem 0;border-top:1px solid var(--line);font-size:.875rem;line-height:1.5;color:rgba(17,17,17,.65)}
+.ritem:first-child{border-top:0}
+.ritem b{color:#111}
+
+/* ===== notes / wellness ===== */
+.notelist{display:flex;flex-direction:column;gap:.5rem;max-height:22rem;overflow:auto}
+.nitem{background:#fff;border:1px solid var(--line);border-radius:1rem;padding:.75rem 1rem;font-size:.875rem;display:flex;gap:.75rem;align-items:flex-start}
+.nitem .nt{flex:1;white-space:pre-wrap;min-width:0}
+.nitem .nd{font-size:.625rem;color:#b6b6b6;white-space:nowrap;flex:none}
+.moods{display:flex;gap:.5rem;flex-wrap:wrap}
+.mood{width:3rem;height:3rem;border-radius:9999px;background:#fff;display:grid;place-items:center;font-size:1.25rem;border:1.5px solid var(--line);transition:all .3s}
+.mood:hover{transform:scale(1.1)}
+.mood.sel{border-color:var(--ink);background:var(--ink)}
+#breath{width:9rem;height:9rem;border-radius:50%;background:radial-gradient(circle at 30% 30%,#cf8047,#97501f);margin:1.25rem auto .75rem;transition:transform 4s cubic-bezier(.45,0,.55,1);box-shadow:0 20px 50px rgba(151,80,31,.35)}
+.breathrun{transform:scale(1.28)}
+.smallnote{font-size:.75rem;color:rgba(17,17,17,.45);line-height:1.5}
+
+/* ===== research ===== */
+.rcard .rlinks{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.875rem}
+.rlink{font-size:.75rem;padding:.5rem 1rem}
+
+/* ===== settings ===== */
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.875rem 0;border-top:1px solid var(--line)}
+.setrow:first-of-type{border-top:0}
+.setrow .st{flex:1}
+.setrow .st b{display:block;font-size:.9375rem;font-weight:600}
+.setrow .st span{font-size:.75rem;color:rgba(17,17,17,.5)}
+.setfields{display:flex;flex-direction:column;gap:.75rem}
+.profilebox{display:flex;align-items:center;gap:1rem}
+.pavatar{width:3.25rem;height:3.25rem;border-radius:9999px;background:linear-gradient(135deg,#cf8047,#97501f);display:grid;place-items:center;color:#fff;font-weight:600;font-size:1.25rem;flex:none}
+
+/* ===== modals ===== */
+.modal{position:fixed;inset:0;z-index:110;display:none;align-items:flex-end;justify-content:center;padding:1rem;background:rgba(17,17,17,.35);backdrop-filter:blur(14px)}
+.modal.open{display:flex}
+.mpanel{position:relative;width:100%;max-width:32rem;max-height:88vh;overflow:auto;background:#fff;border-radius:1.5rem;padding:1.5rem;box-shadow:0 30px 80px rgba(0,0,0,.35);transform:translateY(28px);opacity:0;transition:transform .45s cubic-bezier(.22,1,.36,1),opacity .45s}
+.modal.open .mpanel{transform:none;opacity:1}
+@media(min-width:640px){.modal{align-items:center}.mpanel{padding:2rem}}
+.mx{position:absolute;right:1rem;top:1rem;width:2.25rem;height:2.25rem;display:grid;place-items:center;border-radius:9999px;background:var(--surface);color:rgba(17,17,17,.6);transition:background .3s,color .3s;z-index:2}
+.mx:hover{background:var(--surface-2);color:#111}
+.mx .ic{width:.875rem;height:.875rem}
+.mform{display:flex;flex-direction:column;gap:1rem;margin-top:1.25rem}
+.mform label{display:flex;flex-direction:column;gap:.375rem;font-size:.75rem;font-weight:500;text-transform:uppercase;letter-spacing:.025em;color:rgba(17,17,17,.5)}
+.gitem{display:flex;gap:.875rem;padding:.75rem 0;border-top:1px solid var(--line);font-size:.875rem;line-height:1.45}
+.gitem:first-of-type{border-top:0}
+.gitem .gi{flex:none;width:2rem;height:2rem;display:grid;place-items:center;border-radius:.75rem;background:var(--surface);font-size:1rem}
+.gitem b{display:block;font-weight:600;margin-bottom:.125rem}
+.gitem p{color:rgba(17,17,17,.6)}
+.bkrow{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+
+/* ===== bot chat ===== */
+#chat{position:fixed;right:1rem;bottom:calc(1rem + env(safe-area-inset-bottom));z-index:90;display:flex;flex-direction:column;align-items:flex-end;gap:.625rem}
+@media(max-width:1023px){#chat{bottom:calc(5rem + env(safe-area-inset-bottom))}}
+#chatBtn{width:3.25rem;height:3.25rem;border-radius:9999px;background:var(--ink);color:#cf8047;display:grid;place-items:center;box-shadow:0 12px 32px rgba(10,10,10,.35);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+#chatBtn:hover{transform:scale(1.08)}
+#chatBtn .ic{width:1.25rem;height:1.25rem}
+#chatPanel{width:min(20rem,calc(100vw - 2rem));height:26rem;background:#fff;border:1px solid var(--line);border-radius:1.25rem;display:none;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(10,10,10,.25)}
+#chatPanel.open{display:flex}
+#chatMsgs{flex:1;overflow:auto;padding:1rem;display:flex;flex-direction:column;gap:.5rem;font-size:.8125rem;line-height:1.45}
+.cm{max-width:85%;padding:.5rem .75rem;border-radius:1rem;background:var(--surface)}
+.cm.me{align-self:flex-end;background:var(--ink);color:#fff}
+.chatin{display:flex;border-top:1px solid var(--line)}
+.chatin input{flex:1;border:0;outline:none;padding:.75rem 1rem;font-size:.8125rem;min-width:0}
+.chatin button{padding:.75rem 1rem;font-weight:600;color:var(--accent)}
+.chathead{padding:.875rem 1rem;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:.5rem;font-size:.8125rem;font-weight:600}
+.cdot{width:.5rem;height:.5rem;border-radius:9999px;background:#3bcf8c;flex:none}
+
+/* ===== toasts ===== */
+#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(5.5rem + env(safe-area-inset-bottom));z-index:130;display:flex;flex-direction:column;gap:.5rem;align-items:center;pointer-events:none;width:max-content;max-width:92vw}
+@media(min-width:1024px){#toasts{bottom:1.5rem}}
+.toast{background:var(--ink);color:#fff;border-radius:9999px;padding:.625rem 1.25rem;font-size:.8125rem;box-shadow:0 10px 30px rgba(0,0,0,.3);animation:tin .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes tin{from{opacity:0;transform:translateY(12px)}}
+.rv{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+.rv.in{opacity:1;transform:none}
+
+/* ===== elegant 3D entrance ===== */
+.glogo{width:3.75rem;height:3.75rem;animation:glogoIn 1.2s .1s cubic-bezier(.2,.8,.2,1) both}
+@keyframes glogoIn{from{opacity:0;transform:translateY(-18px) scale(.8) rotate(-8deg);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+.gtitle3d{perspective:700px;display:flex;flex-direction:column;gap:.15em}
+.gl{display:block;font-size:2.6rem;font-weight:600;letter-spacing:-.02em;line-height:1.05;transform-origin:50% 100%;animation:glIn 1.15s cubic-bezier(.2,.8,.2,1) both}
+.gl:nth-child(2){animation-delay:.14s}
+.gl:nth-child(3){animation-delay:.28s;color:#cf8047}
+@media(min-width:640px){.gl{font-size:3.75rem}}
+@keyframes glIn{from{opacity:0;transform:rotateX(38deg) translateY(34px) scale(.94);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+.gcta{position:relative;display:grid;place-items:center;margin-top:.5rem}
+.gring{position:absolute;width:12.5rem;height:12.5rem;border-radius:50%;border:1px dashed rgba(207,128,71,.55);animation:spin 26s linear infinite}
+.gring::after{content:"";position:absolute;top:-4px;left:50%;width:.5rem;height:.5rem;border-radius:50%;background:#cf8047;box-shadow:0 0 14px #cf8047}
+.gcta .pill{position:relative;z-index:1}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== 3D inside every page (dark glass over the world) ===== */
+.vsolid{background:linear-gradient(180deg,rgba(11,11,14,.84),rgba(10,10,12,.95));color:#e9e7e3}
+.vhead h2{color:#fff}
+.vhead .sub{color:rgba(255,255,255,.6)}
+.vsolid .card{color:#e9e7e3}
+.inp{color:#111}
+.empty{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.5);background:rgba(255,255,255,.03)}
+.card .empty{border-color:var(--line);color:rgba(17,17,17,.45);background:transparent}
+.fchip{border-color:rgba(255,255,255,.22);color:rgba(255,255,255,.7)}
+.fchip.on{background:#fff;color:#111;border-color:#fff}
+
+/* ===== habits ===== */
+.habit .fl{font-size:.8125rem;color:#cf8047;font-weight:600;white-space:nowrap}
+.habit.doneh{opacity:.75}
+
+/* ===== onboarding wizard ===== */
+.obsteps{display:flex;gap:.375rem;margin:.5rem 0 1rem}
+.obsteps i{height:.25rem;flex:1;border-radius:9999px;background:var(--surface-2);transition:background .3s}
+.obsteps i.on{background:var(--accent)}
+.obp{display:none}.obp.act{display:block}
+.obp h3{font-size:1.125rem;font-weight:600;margin-bottom:1rem}
+.wchips{display:flex;flex-wrap:wrap;gap:.5rem}
+.wchip{border:1px solid var(--line);border-radius:9999px;padding:.5rem 1rem;font-size:.8125rem;font-weight:500;color:rgba(17,17,17,.65);transition:all .25s}
+.wchip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* ===== quick capture ===== */
+#capFab{position:fixed;left:1rem;bottom:calc(1rem + env(safe-area-inset-bottom));z-index:90;display:inline-flex;align-items:center;gap:.5rem;border-radius:9999px;background:linear-gradient(135deg,#cf8047,#97501f);color:#fff;padding:.875rem 1.25rem;font-size:.8125rem;font-weight:600;letter-spacing:.02em;box-shadow:0 12px 32px rgba(151,80,31,.4);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+#capFab:hover{transform:scale(1.06)}
+@media(max-width:1023px){#capFab{bottom:calc(5rem + env(safe-area-inset-bottom))}}
+.capgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(9rem,1fr));gap:.625rem}
+.capgrid img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:.875rem;border:1px solid var(--line)}
+</style>
+<style>
+/* ===== DARK GLASS THEME (everything readable on the 3D black world) ===== */
+html{color-scheme:dark}
+body{color:#e9e7e3}
+.micro{color:rgba(255,255,255,.45)}
+.sub{color:rgba(255,255,255,.6)}
+.smallnote{color:rgba(255,255,255,.45)}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#e9e7e3}
+.empty{border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.55);background:rgba(255,255,255,.03)}
+.card .empty{border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.55);background:transparent}
+.inp{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15);color:#fff}
+.inp:focus{border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.12)}
+.pill.dark{background:linear-gradient(135deg,#cf8047,#97501f);color:#fff}
+.pill.dark .badge{background:#fff;color:#111}
+.pill.light{background:rgba(255,255,255,.12);color:#fff}
+.pill.outline{border-color:rgba(255,255,255,.2)}
+.task{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+.tchk{border-color:rgba(255,255,255,.35)}
+.task.done .tchk{background:linear-gradient(135deg,#cf8047,#97501f);border-color:transparent;color:#fff}
+.tdel{color:rgba(255,255,255,.4)}
+.tdel:hover{color:#fff}
+.ring{background:conic-gradient(var(--accent) calc(var(--p)*1%),rgba(255,255,255,.14) 0)}
+.ring i{background:#15161a}
+.ring i span{color:rgba(255,255,255,.45)}
+.vid{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+.vid .th{background:#000}
+.tabs{background:rgba(255,255,255,.07)}
+.tab{color:rgba(255,255,255,.55)}
+.tab.on{background:linear-gradient(135deg,#cf8047,#97501f);color:#fff}
+.rem{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+.sw{background:rgba(255,255,255,.22)}
+.sw.on{background:linear-gradient(135deg,#cf8047,#97501f)}
+.fchip.on{background:linear-gradient(135deg,#cf8047,#97501f);color:#fff;border-color:transparent}
+.nitem{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+.mood{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15)}
+.mood.sel{background:linear-gradient(135deg,#cf8047,#97501f);border-color:transparent}
+.ritem{border-top:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65)}
+.ritem b{color:#fff}
+.setrow{border-top:1px solid rgba(255,255,255,.12)}
+.setrow .st span{color:rgba(255,255,255,.5)}
+.wchip{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7)}
+.wchip.on{background:linear-gradient(135deg,#cf8047,#97501f);color:#fff;border-color:transparent}
+.obsteps i{background:rgba(255,255,255,.15)}
+.mpanel{background:#141519;border:1px solid rgba(255,255,255,.08);color:#e9e7e3}
+.mx{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6)}
+.mx:hover{background:rgba(255,255,255,.16);color:#fff}
+.mform label{color:rgba(255,255,255,.5)}
+.gitem{border-top:1px solid rgba(255,255,255,.1)}
+.gitem .gi{background:rgba(255,255,255,.07)}
+.gitem b{color:#fff}
+.gitem p{color:rgba(255,255,255,.6)}
+.mspanel{background:#141519;color:#e9e7e3;border:1px solid rgba(255,255,255,.08)}
+.mstit{color:rgba(255,255,255,.45)}
+.msitem{background:rgba(255,255,255,.05);color:#e9e7e3}
+.msitem:hover{background:rgba(255,255,255,.12)}
+#chatPanel{background:#141519;border-color:rgba(255,255,255,.1)}
+.cm{background:rgba(255,255,255,.08);color:#e9e7e3}
+.cm.me{background:linear-gradient(135deg,#cf8047,#97501f);color:#fff}
+.chatin{border-top:1px solid rgba(255,255,255,.1)}
+.chatin input{color:#fff}
+.chathead{border-bottom:1px solid rgba(255,255,255,.1);color:#fff}
+#chatBtn{background:linear-gradient(135deg,#cf8047,#97501f);color:#fff}
+.toast{border:1px solid rgba(255,255,255,.14)}
+.capgrid img{border-color:rgba(255,255,255,.14)}
+.vol{background:rgba(255,255,255,.25)}
+</style>
+</head>
+<body>
+<!-- ===== icon symbols ===== -->
+<svg style="display:none" aria-hidden="true">
+  <defs>
+    <linearGradient id="lgGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F3D37A"/><stop offset=".5" stop-color="#CF8047"/><stop offset="1" stop-color="#97501F"/>
+    </linearGradient>
+  </defs>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5"/></symbol>
+  <symbol id="i-plan" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l2.5 2.5L16 9"/></symbol>
+  <symbol id="i-grow" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></symbol>
+  <symbol id="i-lib" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></symbol>
+  <symbol id="i-sched" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-focus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></symbol>
+  <symbol id="i-notes" viewBox="0 0 24 24"><path d="M4 20h4L20 8l-4-4L4 16v4zM14 6l4 4"/></symbol>
+  <symbol id="i-well" viewBox="0 0 24 24"><path d="M12 21C6 16 3 12.5 3 8.8 3 6 5.2 4 7.8 4c1.7 0 3.2.8 4.2 2.2C13 4.8 14.5 4 16.2 4 18.8 4 21 6 21 8.8c0 3.7-3 7.2-9 12.2z"/></symbol>
+  <symbol id="i-res" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+  <symbol id="i-set" viewBox="0 0 24 24"><path d="M4 6h8M17 6h3M4 12h4M13 12h7M4 18h10M19 18h1"/><circle cx="14.5" cy="6" r="2"/><circle cx="10.5" cy="12" r="2"/><circle cx="16.5" cy="18" r="2"/></symbol>
+  <symbol id="i-mus" viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></symbol>
+  <symbol id="i-bot" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 8.9 8.9 0 0 1-3.8-.8L3 20l1.1-4.2a8 8 0 0 1-1.1-4.3A8.4 8.4 0 0 1 11.5 3 8.4 8.4 0 0 1 21 11.5z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4 4 20"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 5v14l8-7zM17 5h2v14h-2z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5 9.5 18 20 6.5"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 48 48"><path d="M24 2c2.2 13.8 7.9 19.6 22 22-14.1 2.4-19.8 8.2-22 22-2.2-13.8-7.9-19.6-22-22 14.1-2.4 19.8-8.2 22-22Z"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="29" fill="none" stroke="url(#lgGold)" stroke-width="2"/>
+    <circle cx="32" cy="32" r="23.5" fill="none" stroke="url(#lgGold)" stroke-width=".8" opacity=".55"/>
+    <path fill="url(#lgGold)" d="M32 12c1.9 12 6.8 17.2 19 19-12.2 1.8-17.1 7-19 19-1.9-12-6.8-17.2-19-19 12.2-1.8 17.1-7 19-19z"/>
+    <circle cx="49" cy="15" r="2.2" fill="url(#lgGold)"/>
+  </symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3.2L9 6h6l1.8 2H20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></symbol>
+</svg>
+
+<canvas id="stage3d" aria-hidden="true"></canvas>
+
+<!-- ===== loader ===== -->
+<div id="loader" role="status" aria-label="Loading">
+  <div class="ld-brand"><svg viewBox="0 0 64 64" style="flex:none"><use href="#i-logo"/></svg>NEXUM</div>
+  <div class="ld-tag">Bold ideas, shipped with quiet precision.</div>
+  <div class="ld-prog">
+    <div class="ld-track"><div id="ldFill"></div></div>
+    <div class="ld-row"><span>Loading</span><span id="ldNum">000</span></div>
+  </div>
+</div>
+
+<!-- ===== gate ===== -->
+<div id="gate">
+  <span class="gcorner tl">NEXUM Studio</span>
+  <span class="gcorner tr">Est. 2026 · N°01</span>
+  <div class="gwrap">
+    <svg class="glogo" viewBox="0 0 64 64"><use href="#i-logo"/></svg>
+    <div class="gmicro">At your service</div>
+    <div class="gtitle3d">
+      <span class="gl">Your work.</span>
+      <span class="gl">Your growth.</span>
+      <span class="gl">One app.</span>
+    </div>
+    <p class="gsub">Plan your day, watch fresh videos, focus without noise and collect your wins — inside a living 3D studio, with music that plays for you.</p>
+    <div class="gcta">
+      <span class="gring" aria-hidden="true"></span>
+      <button id="enterBtn" class="pill dark arrow" style="background:linear-gradient(135deg,#cf8047,#97501f);color:#fff;padding:.375rem .375rem .375rem 1.75rem;font-size:.9375rem">
+        <span>Enter the studio</span>
+        <span class="badge" style="background:#0a0a0a;color:#fff"><svg class="ic"><use href="#i-arrow"/></svg></span>
+      </button>
+    </div>
+    <div class="ghint">🔈 sound on — music starts the moment you enter</div>
+    <div class="gstat">
+      <div><b id="gStreak">0</b><span>day streak</span></div>
+      <div><b id="gFocus">0</b><span>focus min</span></div>
+      <div><b id="gTasks">0</b><span>wins banked</span></div>
+    </div>
+  </div>
+  <span class="gcorner bl">Private · on-device</span>
+  <span class="gcorner br">Swipe the world with your cursor</span>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+  <!-- sidebar (desktop) -->
+  <aside id="side">
+    <div class="sbrand"><svg viewBox="0 0 64 64" style="flex:none"><use href="#i-logo"/></svg>NEXUM</div>
+    <button class="ni on" data-view="home"><svg class="ic"><use href="#i-home"/></svg>Home</button>
+    <button class="ni" data-view="plan"><svg class="ic"><use href="#i-plan"/></svg>Plan</button>
+    <button class="ni" data-view="habits"><svg class="ic"><use href="#i-check"/></svg>Habits</button>
+    <button class="ni" data-view="growth"><svg class="ic"><use href="#i-grow"/></svg>Growth</button>
+    <button class="ni" data-view="library"><svg class="ic"><use href="#i-lib"/></svg>Library</button>
+    <button class="ni" data-view="schedule"><svg class="ic"><use href="#i-sched"/></svg>Schedule</button>
+    <button class="ni" data-view="focus"><svg class="ic"><use href="#i-focus"/></svg>Focus</button>
+    <button class="ni" data-view="notes"><svg class="ic"><use href="#i-notes"/></svg>Notes</button>
+    <button class="ni" data-view="wellness"><svg class="ic"><use href="#i-well"/></svg>Wellness</button>
+    <button class="ni" data-view="research"><svg class="ic"><use href="#i-res"/></svg>Research</button>
+    <button class="ni" data-view="settings"><svg class="ic"><use href="#i-set"/></svg>Settings</button>
+    <div class="sside">
+      <div class="musw">
+        <div class="mrow">
+          <div class="musname"><small>Now playing</small><span id="musName">Morning Blue</span></div>
+          <button id="musNext" class="mbtn" aria-label="Next track"><svg class="ic fill"><use href="#i-next"/></svg></button>
+        </div>
+        <div class="mrow">
+          <button id="musPlay" class="mbtn" aria-label="Play / pause"><svg class="ic" id="musIco"><use href="#i-play"/></svg></button>
+          <input id="musVol" class="vol" type="range" min="0" max="100" value="55" aria-label="Volume"/>
+        </div>
+      </div>
+      <div class="streakmini"><b id="sStreak">0</b><div><span>day streak</span><button class="ni" data-view="growth" style="padding:.25rem 0;color:#cf8047;font-size:.75rem">Grow it →</button></div></div>
+      <button class="ni" id="sideBot"><svg class="ic"><use href="#i-bot"/></svg>Assistant</button>
+      <button class="ni" id="sideCap"><svg class="ic"><use href="#i-cam"/></svg>Capture</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <!-- ============ HOME ============ -->
+    <section class="view act" data-view="home" id="view-home">
+      <div class="homegrid">
+        <div class="hg g7">
+          <div class="hhi" id="hPeriod">Good evening</div>
+          <div class="hname" id="hName">Welcome</div>
+          <p class="hquote" id="hQuote">One good plan, one good video, one good focus round. That's a day that moves you.</p>
+          <div id="hWants" class="hlbl" style="margin-top:.75rem;color:#cf8047"></div>
+        </div>
+        <div class="hg g5">
+          <div class="hrow">
+            <div><div class="hbig" id="hStreak">0</div><div class="hlbl">day streak</div></div>
+            <button id="hWatched" class="pill dark arrow" style="background:#cf8047"><span>Watched today</span><span class="badge"><svg class="ic"><use href="#i-check"/></svg></span></button>
+          </div>
+          <div class="hstat3">
+            <div><b id="hFocusMin">0</b><span>focus min</span></div>
+            <div><b id="hDone">0</b><span>done today</span></div>
+            <div><b id="hNotesN">0</b><span>notes</span></div>
+          </div>
+        </div>
+        <div class="hg g8">
+          <div class="hlbl" style="margin-bottom:.75rem">Quick actions</div>
+          <div class="hacts">
+            <button class="pill light sm" data-view="plan" style="background:rgba(255,255,255,.12);color:#fff"><svg class="ic" style="width:.875rem;height:.875rem"><use href="#i-plan"/></svg>Add a task</button>
+            <button class="pill light sm" data-view="focus" style="background:rgba(255,255,255,.12);color:#fff"><svg class="ic" style="width:.875rem;height:.875rem"><use href="#i-focus"/></svg>Start focus</button>
+            <button class="pill light sm" data-view="growth" style="background:rgba(255,255,255,.12);color:#fff"><svg class="ic" style="width:.875rem;height:.875rem"><use href="#i-grow"/></svg>Daily videos</button>
+            <button class="pill light sm" data-view="wellness" style="background:rgba(255,255,255,.12);color:#fff"><svg class="ic" style="width:.875rem;height:.875rem"><use href="#i-well"/></svg>Breathe</button>
+            <button class="pill light sm" data-view="habits" style="background:rgba(255,255,255,.12);color:#fff"><svg class="ic" style="width:.875rem;height:.875rem"><use href="#i-check"/></svg>Habits</button>
+            <button class="pill light sm" id="hGuide" style="background:rgba(255,255,255,.12);color:#fff"><svg class="ic" style="width:.875rem;height:.875rem"><use href="#i-notes"/></svg>Guide</button>
+          </div>
+        </div>
+        <div class="hg g7">
+          <div class="hlbl" style="margin-bottom:.75rem">Today's plan</div>
+          <div id="hTasks" class="tlist"></div>
+        </div>
+        <div class="hg g5">
+          <div class="hlbl" style="margin-bottom:.75rem">Fresh video for you</div>
+          <div id="hVideo"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PLAN ============ -->
+    <section class="view vsolid" data-view="plan">
+      <div class="vwrap">
+        <div class="vhead">
+          <div class="vk">The daily stage</div>
+          <h2>Today's Plan</h2>
+          <div class="sub">Add the tasks that matter today. Small and specific beats big and vague — every time.</div>
+        </div>
+        <div class="plangrid">
+          <div class="card">
+            <div class="addrow">
+              <input id="taskInput" class="inp" placeholder="What will you move today?" maxlength="120"/>
+              <button id="addTask" class="pill dark plain" style="flex:none">Add</button>
+            </div>
+            <div id="taskList" class="tlist"></div>
+          </div>
+          <div class="card ringwrap">
+            <div class="ring" id="ring"><i><b id="planPct">0%</b><span>done</span></i></div>
+            <div class="micro">Done today</div>
+            <div class="sub" style="text-align:center">Check tasks off as you go — the ring fills with you.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HABITS ============ -->
+    <section class="view vsolid" data-view="habits">
+      <div class="vwrap">
+        <div class="vhead">
+          <div class="vk">The compound engine</div>
+          <h2>Daily Habits</h2>
+          <div class="sub">Tiny actions, done daily, change everything. Tap the circle each day you keep a habit — watch its flame grow.</div>
+        </div>
+        <div class="card">
+          <div class="addrow">
+            <input id="habitInput" class="inp" placeholder="Add a habit — e.g. Read 10 pages" maxlength="60"/>
+            <button id="habitAdd" class="pill dark plain" style="flex:none">Add</button>
+          </div>
+          <div id="habitList" class="tlist"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ GROWTH ============ -->
+    <section class="view vsolid" data-view="growth">
+      <div class="vwrap">
+        <div class="vhead">
+          <div class="vk">The growth engine</div>
+          <h2>Watch. Learn. Level up.</h2>
+          <div class="sub">Three fresh video suggestions every day, tuned to your work and goal. Watch one, tap "Watched today", keep the streak alive.</div>
+        </div>
+        <div class="growrow">
+          <div class="card streakcard">
+            <div class="bign" id="streakN">0</div>
+            <div class="micro">day streak</div>
+            <div class="sub" id="streakMsg">Watch one video today to start your streak.</div>
+            <button id="watchedBtn" class="pill dark arrow" style="margin-top:1rem"><span>Watched today</span><span class="badge"><svg class="ic"><use href="#i-check"/></svg></span></button>
+          </div>
+          <div class="vgrid" id="dailyVideos"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LIBRARY ============ -->
+    <section class="view vsolid" data-view="library">
+      <div class="vwrap">
+        <div class="vhead">
+          <div class="vk">Your library</div>
+          <h2>Collect what moves you.</h2>
+          <div class="sub">Paste a YouTube or Instagram link and it lands on your shelf with a thumbnail. Tap any card to open it.</div>
+        </div>
+        <div class="tabs">
+          <button class="tab on" id="tabYT">YouTube</button>
+          <button class="tab" id="tabIG">Instagram</button>
+        </div>
+        <div class="addrow" style="max-width:34rem">
+          <input id="plUrl" class="inp" placeholder="Paste a link…"/>
+          <input id="plName" class="inp" placeholder="Name (optional)" style="max-width:12rem;flex:none"/>
+          <button id="plAdd" class="pill dark plain" style="flex:none">Add</button>
+        </div>
+        <div id="plGrid" class="plgrid"></div>
+      </div>
+    </section>
+
+    <!-- ============ SCHEDULE ============ -->
+    <section class="view vsolid" data-view="schedule">
+      <div class="vwrap">
+        <div class="vhead">
+          <div class="vk">The quiet clock</div>
+          <h2>Reminders that respect you.</h2>
+          <div class="sub">Set a note and a time. NEXUM chimes, pops a toast, and (if you allow it) sends a real notification.</div>
+        </div>
+        <div class="card">
+          <div class="addrow">
+            <input id="remText" class="inp" placeholder="Remind me to…" maxlength="100"/>
+            <input id="remTime" type="time" class="inp" style="max-width:9rem;flex:none"/>
+            <button id="remQuick" class="pill outline plain" style="flex:none">⚡ In 25 min</button>
+            <button id="remAdd" class="pill dark plain" style="flex:none">Set</button>
+          </div>
+          <div id="remList" class="tlist"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FOCUS ============ -->
+    <section class="view vsolid" data-view="focus">
+      <div class="vwrap">
+        <div class="vhead">
+          <div class="vk">The focus forge</div>
+          <h2>One task. Zero noise.</h2>
+          <div class="sub">Pick a length, press start. When the round completes, the minutes are banked and the studio glows.</div>
+        </div>
+        <div class="focuswrap">
+          <div class="card fbig">
+            <div class="ring" id="focusRing" style="width:5rem;height:5rem"><i style="width:4rem;height:4rem;background:#15161a"><span style="font-size:.625rem;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.45)">focus</span></i></div>
+            <div id="focusTime">25:00</div>
+            <div class="fchips">
+              <button class="fchip" data-m="15">15 min</button>
+              <button class="fchip on" data-m="25">25 min</button>
+              <button class="fchip" data-m="50">50 min</button>
+              <button class="fchip" id="fMine">My length</button>
+            </div>
+            <div class="fbtns">
+              <button id="focusStart" class="pill dark arrow"><span>Start</span><span class="badge"><svg class="ic fill"><use href="#i-play"/></svg></span></button>
+              <button id="focusReset" class="pill outline plain">Reset</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="micro" style="margin-bottom:.75rem">Session ritual</div>
+            <div class="ritem"><span>1.</span><p><b>Choose the one task</b> that would make today a win.</p></div>
+            <div class="ritem"><span>2.</span><p><b>Put the phone</b> across the room.</p></div>
+            <div class="ritem"><span>3.</span><p><b>Start the timer</b> and touch only that task until the ring closes.</p></div>
+            <div class="ritem"><span>4.</span><p><b>Bank the minutes</b> — every round feeds your stats and pulses the 3D world.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ NOTES + WELLNESS ============ -->
+    <section class="view vsolid" data-view="notes">
+      <div class="vwrap">
+        <div class="vhead">
+          <div class="vk">Marginalia</div>
+          <h2>Quick Notes</h2>
+          <div class="sub">Capture ideas, to-dos and things you learned. They save instantly, on your device.</div>
+        </div>
+        <div class="card" style="margin-bottom:1.25rem">
+          <div class="micro" style="margin-bottom:.75rem">Captures — quick stuff you saved</div>
+          <div id="capGrid" class="capgrid"></div>
+          <div id="capTexts" class="tlist" style="margin-top:.75rem"></div>
+        </div>
+        <div class="card">
+          <div class="addrow">
+            <input id="noteInput" class="inp" placeholder="An idea worth keeping…" maxlength="240"/>
+            <button id="noteAdd" class="pill dark plain" style="flex:none">Keep</button>
+          </div>
+          <div id="noteList" class="notelist"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view vsolid" data-view="wellness">
+      <div class="vwrap">
+        <div class="vhead">
+          <div class="vk">The health of the work</div>
+          <h2>Mood &amp; Breathing</h2>
+          <div class="sub">Check in with yourself — then take one slow, guided breath with the orb.</div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="micro" style="margin-bottom:.75rem">How are you?</div>
+            <div class="moods">
+              <button class="mood" data-v="0">😞</button><button class="mood" data-v="1">🙁</button><button class="mood" data-v="2">😐</button><button class="mood" data-v="3">🙂</button><button class="mood" data-v="4">😄</button>
+            </div>
+            <div id="moodMsg" class="smallnote" style="margin-top:.75rem">Tap a face — it logs privately, just for you.</div>
+          </div>
+          <div class="card" style="text-align:center">
+            <div id="breath"></div>
+            <div id="breathTxt" class="smallnote" style="margin-bottom:.75rem">4 seconds in · 4 hold · 4 out</div>
+            <button id="breathBtn" class="pill outline plain">Start breathing</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:1.25rem">
+          <div class="micro" style="margin-bottom:.75rem">Evening review — 1 minute</div>
+          <div class="addrow" style="margin:0 0 .75rem"><input id="rvWins" class="inp" placeholder="My win(s) today…"/></div>
+          <div class="addrow" style="margin:0 0 .75rem"><input id="rvTomorrow" class="inp" placeholder="One thing for tomorrow…"/></div>
+          <button id="rvSave" class="pill dark sm">Save review</button>
+          <div id="rvPast" class="smallnote" style="margin-top:.875rem"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RESEARCH ============ -->
+    <section class="view vsolid" data-view="research">
+      <div class="vwrap">
+        <div class="vhead">
+          <div class="vk">The research desk</div>
+          <h2>Look outward, wisely.</h2>
+          <div class="sub">One-tap research launches for your topics across X, Reddit, YouTube and the news — smart inputs, no doom-scrolling.</div>
+        </div>
+        <div class="grid2" id="resLinks" style="grid-template-columns:1fr"></div>
+      </div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section class="view vsolid" data-view="settings">
+      <div class="vwrap">
+        <div class="vhead">
+          <div class="vk">The control room</div>
+          <h2>Settings</h2>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="micro" style="margin-bottom:1rem">Your profile</div>
+            <div class="profilebox" style="margin-bottom:1rem">
+              <div class="pavatar" id="pAvatar">?</div>
+              <div><b id="pName" style="font-weight:600">Guest</b><div class="smallnote" id="pMeta">Finish onboarding to personalize.</div></div>
+            </div>
+            <div class="setfields">
+              <label class="smallnote">Name<input id="setName" class="inp" maxlength="30"/></label>
+              <label class="smallnote">Work / studies<input id="setWork" class="inp" maxlength="60"/></label>
+              <label class="smallnote">Big goal<input id="setGoal" class="inp" maxlength="60"/></label>
+              <label class="smallnote">Daily focus minutes
+                <select id="setMin" class="inp"><option value="15">15</option><option value="25">25</option><option value="50">50</option></select>
+              </label>
+              <button id="setSave" class="pill dark plain" style="align-self:flex-start">Save profile</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="micro" style="margin-bottom:1rem">Music</div>
+            <div class="musname" style="color:#fff"><span id="musName2" style="font-size:.9375rem;font-weight:600">Morning Blue</span><small style="color:rgba(255,255,255,.45)">generative · always different</small></div>
+            <div class="hacts" style="margin-top:.875rem">
+              <button id="musPlay2" class="pill dark sm"><svg class="ic" style="width:.875rem;height:.875rem"><use href="#i-play"/></svg><span>Play / pause</span></button>
+              <button id="musNext2" class="pill outline sm"><svg class="ic" style="width:.875rem;height:.875rem"><use href="#i-next"/></svg><span>Next track</span></button>
+            </div>
+            <input id="musVol2" class="vol" type="range" min="0" max="100" value="55" style="margin-top:1rem;background:rgba(255,255,255,.25)"/>
+            <hr class="ehr" style="height:1px;background:var(--line);border:0;margin:1.25rem 0"/>
+            <div class="micro" style="margin-bottom:.5rem">Data &amp; help</div>
+            <div class="hacts">
+              <button id="setGuide" class="pill outline sm">Open guide</button>
+              <button id="setExport" class="pill outline sm">Export backup</button>
+              <button id="setImport" class="pill outline sm">Import backup</button>
+              <button id="setReset" class="pill outline sm" style="color:#cf8047">Reset studio</button>
+            </div>
+            <p class="smallnote" style="margin-top:1rem">📱 Install on your phone: open this page in Chrome → menu ⋮ → <b>Add to Home screen</b>.</p>
+          </div>
+          <div class="card" style="grid-column:1/-1">
+            <div class="micro" style="margin-bottom:.75rem">Get the app / publish</div>
+            <div class="hacts" style="margin-bottom:1rem">
+              <button id="dlApp" class="pill dark sm">⬇️ Download NEXUM</button>
+              <button id="installBtn" class="pill outline sm" style="display:none">📲 Install now</button>
+            </div>
+            <p class="smallnote">Download gives you the whole app as one file — keep it, share it, or move it to any device.</p>
+            <p class="smallnote" style="margin-top:.5rem"><b>Publish online (2 minutes):</b> 1) Go to <b>app.netlify.com/drop</b>. 2) Drag this file (or the whole NEXUM folder) onto the page. 3) Open the link on your phone → menu ⋮ → <b>Add to Home screen</b>. Done — a real installed app with notifications.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- mobile chrome -->
+  <div id="mtop">
+    <div class="sbrand"><svg viewBox="0 0 64 64" style="flex:none"><use href="#i-logo"/></svg>NEXUM</div>
+    <button id="mMus" class="mchip" aria-label="Music"><svg class="ic"><use href="#i-mus"/></svg></button>
+  </div>
+  <nav id="tabbar">
+    <button class="tb on" data-view="home"><svg class="ic"><use href="#i-home"/></svg>Home</button>
+    <button class="tb" data-view="plan"><svg class="ic"><use href="#i-plan"/></svg>Plan</button>
+    <button class="tb" data-view="growth"><svg class="ic"><use href="#i-grow"/></svg>Grow</button>
+    <button class="tb" data-view="focus"><svg class="ic"><use href="#i-focus"/></svg>Focus</button>
+    <button class="tb" id="tabMore"><svg class="ic"><use href="#i-set"/></svg>More</button>
+  </nav>
+  <div id="moreSheet">
+    <div class="mspanel">
+      <div class="mstit">More shelves</div>
+      <div class="msgrid">
+        <button class="msitem" data-view="library"><svg class="ic"><use href="#i-lib"/></svg>Library</button>
+        <button class="msitem" data-view="schedule"><svg class="ic"><use href="#i-sched"/></svg>Schedule</button>
+        <button class="msitem" data-view="habits"><svg class="ic"><use href="#i-check"/></svg>Habits</button>
+        <button class="msitem" data-view="notes"><svg class="ic"><use href="#i-notes"/></svg>Notes</button>
+        <button class="msitem" data-view="wellness"><svg class="ic"><use href="#i-well"/></svg>Wellness</button>
+        <button class="msitem" data-view="research"><svg class="ic"><use href="#i-res"/></svg>Research</button>
+        <button class="msitem" data-view="settings"><svg class="ic"><use href="#i-set"/></svg>Settings</button>
+      </div>
+      <div style="height:.5rem"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== modals ===== -->
+<div class="modal" id="obModal" role="dialog" aria-modal="true">
+  <div class="mpanel">
+    <button class="mx" data-close><svg class="ic"><use href="#i-x"/></svg></button>
+    <div class="vk">Let's personalize NEXUM</div>
+    <div class="obsteps" id="obSteps"><i class="on"></i><i></i><i></i><i></i></div>
+    <div class="obp act" data-ob="1">
+      <h3>First — who's joining? 👋</h3>
+      <label class="smallnote">Your name<input id="obName" class="inp" placeholder="e.g. Ayaan" maxlength="30"/></label>
+    </div>
+    <div class="obp" data-ob="2">
+      <h3>What do you do, and what's the big goal? 🎯</h3>
+      <label class="smallnote">Your work / studies<input id="obWork" class="inp" placeholder="e.g. School, coding, art…" maxlength="60"/></label>
+      <label class="smallnote" style="margin-top:.75rem">Your big goal<input id="obGoal" class="inp" placeholder="e.g. Build a game, get fit, learn English" maxlength="60"/></label>
+    </div>
+    <div class="obp" data-ob="3">
+      <h3>What do you want from NEXUM? (pick any) ✨</h3>
+      <div class="wchips" id="obWants">
+        <button class="wchip" data-w="Plan my day">Plan my day</button>
+        <button class="wchip" data-w="Learn every day">Learn every day</button>
+        <button class="wchip" data-w="Focus deep">Focus deep</button>
+        <button class="wchip" data-w="Build habits">Build habits</button>
+        <button class="wchip" data-w="Keep videos organized">Keep videos organized</button>
+        <button class="wchip" data-w="Stay positive">Stay positive</button>
+      </div>
+    </div>
+    <div class="obp" data-ob="4">
+      <h3>How do you like to learn? 🎬</h3>
+      <div class="wchips" id="obStyle" style="margin-bottom:1rem">
+        <button class="wchip on" data-s="tutorial">Short tutorials</button>
+        <button class="wchip" data-s="full course">Full courses</button>
+        <button class="wchip" data-s="quick tips">Quick tips</button>
+        <button class="wchip" data-s="deep lecture">Deep lectures</button>
+      </div>
+      <label class="smallnote">Daily focus minutes
+        <select id="obMin" class="inp"><option value="15">15 minutes</option><option value="25" selected>25 minutes</option><option value="50">50 minutes</option></select>
+      </label>
+      <label class="smallnote" style="margin-top:.75rem">Best time to work (we'll set a reminder)
+        <input id="obTime" type="time" class="inp"/>
+      </label>
+    </div>
+    <div style="margin-top:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem">
+      <button id="obBack" class="pill outline sm">Back</button>
+      <button id="obNext" class="pill dark arrow"><span>Next</span><span class="badge"><svg class="ic"><use href="#i-arrow"/></svg></span></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="guideModal" role="dialog" aria-modal="true">
+  <div class="mpanel">
+    <button class="mx" data-close><svg class="ic"><use href="#i-x"/></svg></button>
+    <div class="vk">The NEXUM guide</div>
+    <h2 style="font-size:1.5rem;font-weight:600;letter-spacing:-.01em;margin:.375rem 0 1rem">Everything, explained simply.</h2>
+    <div id="guideList"></div>
+    <p class="smallnote" style="margin-top:1rem">📱 <b>On your phone:</b> Chrome → menu ⋮ → "Add to Home screen" — NEXUM installs like an app.</p>
+    <p class="smallnote">🔒 Everything you write is saved only on your device. Use the backup buttons in Settings to move it anywhere.</p>
+    <div class="bkrow"><button class="pill dark plain" data-close>Got it</button></div>
+  </div>
+</div>
+
+<!-- ===== quick capture ===== -->
+<button id="capFab" aria-label="Quick capture"><svg class="ic" style="width:1rem;height:1rem"><use href="#i-cam"/></svg>Capture</button>
+<div class="modal" id="capModal" role="dialog" aria-modal="true">
+  <div class="mpanel">
+    <button class="mx" data-close><svg class="ic"><use href="#i-x"/></svg></button>
+    <div class="vk">Quick capture</div>
+    <h2 style="font-size:1.375rem;font-weight:600;margin:.375rem 0 1rem">Save it now, sort it later.</h2>
+    <div class="addrow" style="margin:0 0 .75rem"><input id="capInput" class="inp" placeholder="A thought, a link, a to-do…"/><button id="capSave" class="pill dark plain" style="flex:none">Save</button></div>
+    <div class="hacts">
+      <button id="capShot" class="pill outline sm">📋 Paste screenshot</button>
+      <button id="capPick" class="pill outline sm">🖼️ Choose image</button>
+    </div>
+    <p class="smallnote" style="margin-top:1rem">On your phone: take a screenshot → open NEXUM → <b>Capture</b> → Choose image. On desktop: copy the screenshot (PrtSc / Snipping Tool) → Paste screenshot.</p>
+  </div>
+</div>
+
+<!-- ===== bot + toasts ===== -->
+<div id="chat">
+  <div id="chatPanel">
+    <div class="chathead"><span class="cdot"></span>Studio Assistant</div>
+    <div id="chatMsgs"></div>
+    <div class="chatin"><input id="chatInput" placeholder="Ask me anything…"/><button id="chatSend">Send</button></div>
+  </div>
+  <button id="chatBtn" aria-label="Assistant"><svg class="ic"><use href="#i-bot"/></svg></button>
+</div>
+<div id="toasts"></div>
+<input type="file" id="bkFile" accept=".json" style="display:none"/>
+<input type="file" id="capFile" accept="image/*" style="display:none"/>
+<script type="importmap">
+{"imports":{"lenis":"https://unpkg.com/lenis@1.3.23/dist/lenis.mjs","three":"https://unpkg.com/three@0.158.0/build/three.module.js"}}
+</script>
+<script type="module">
+/* ================= NEXUM app core ================= */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={
+  get(k,d){try{const v=localStorage.getItem('nexum_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('nexum_'+k,JSON.stringify(v))}catch(e){}}
+};
+const today=()=>new Date().toLocaleDateString('en-CA');
+const yesterday=()=>new Date(Date.now()-864e5).toLocaleDateString('en-CA');
+let profile=store.get('profile',null);
+
+/* ================= view switching ================= */
+let curView='home';
+function switchView(v,quiet){
+  curView=v;
+  $$('.view').forEach(s=>s.classList.toggle('act',s.dataset.view===v));
+  $$('.ni[data-view],.tb[data-view]').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  $('#moreSheet').classList.remove('open');
+  closeChatPanel();
+  window.scrollTo({top:0,behavior:'instant'});
+  const R={plan:renderTasks,growth:renderGrowth,habits:renderHabits,library:renderPl,schedule:renderRems,notes:renderNotes,wellness:renderWellness,research:renderResearch,settings:renderSettings,home:renderHome};
+  R[v]&&R[v]();
+  if(!quiet)revealInView();
+}
+function revealInView(){
+  const act=$('.view.act');if(!act)return;
+  $$('.rv',act).forEach(el=>{if(!el.classList.contains('in'))requestAnimationFrame(()=>el.classList.add('in'))});
+}
+$$('[data-view]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+$('#tabMore').onclick=()=>$('#moreSheet').classList.toggle('open');
+$('#moreSheet').addEventListener('click',e=>{if(e.target.id==='moreSheet')$('#moreSheet').classList.remove('open')});
+
+/* ================= toasts ================= */
+function toast(msg,ms=3200){const t=document.createElement('div');t.className='toast';t.textContent=msg;$('#toasts').append(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .4s';setTimeout(()=>t.remove(),420)},ms)}
+
+/* ================= modals ================= */
+function openModal(id){$('#'+id).classList.add('open')}
+function closeModal(m){m.classList.remove('open')}
+$$('.modal').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)closeModal(m)});$$('[data-close]',m).forEach(x=>x.onclick=()=>closeModal(m))});
+addEventListener('keydown',e=>{if(e.key==='Escape'){$$('.modal.open').forEach(closeModal);$('#moreSheet').classList.remove('open');closeChatPanel()}});
+
+/* ================= loader → gate ================= */
+function openGuide(){openModal('guideModal');store.set('guideSeen',true)}
+$('#hGuide').onclick=openGuide;$('#setGuide').onclick=openGuide;
+$('#sideBot').onclick=()=>switchChat();
+{
+  const fill=$('#ldFill'),num=$('#ldNum'),ld=$('#loader'),t0=performance.now(),T=1300;
+  const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  const step=n=>{const p=Math.min((n-t0)/T,1),e=ease(p);fill.style.width=(e*100)+'%';num.textContent=String(Math.round(e*100)).padStart(3,'0');
+    if(p<1)requestAnimationFrame(step);else{ld.classList.add('exit');setTimeout(()=>ld.remove(),800)}};
+  requestAnimationFrame(step);
+}
+/* gate stats */
+{
+  const s=store.get('streak',{count:0});$('#gStreak').textContent=s.count||0;
+  $('#gFocus').textContent=store.get('focusTotal',0);
+  $('#gTasks').textContent=store.get('tasks',[]).filter(t=>t.done).length;
+}
+
+/* ================= enter ================= */
+let entered=false;
+$('#enterBtn').addEventListener('click',()=>{
+  if(entered)return;entered=true;
+  music.start();                       // song plays instantly (this tap is the gesture)
+  worldEnter&&worldEnter();            // camera flies into the world — feels 3D
+  const g=$('#gate');g.classList.add('gone');
+  document.body.classList.add('ready');
+  setTimeout(()=>{
+    try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}
+    const first=!profile;
+    if(first){openModal('obModal')}
+    else if(!store.get('guideSeen',false)){openGuide();toast('Welcome back, '+((profile&&profile.name)||'friend')+' 👋')}
+    else{toast('Welcome back, '+((profile&&profile.name)||'friend')+' 👋')}
+    renderHome();
+  },900);
+});
+
+/* ================= onboarding wizard (question system) ================= */
+let obStep=1;const obWants=new Set();let obStyle='tutorial';
+$$('#obWants .wchip').forEach(c=>c.onclick=()=>{c.classList.toggle('on');const w=c.dataset.w;c.classList.contains('on')?obWants.add(w):obWants.delete(w)});
+$$('#obStyle .wchip').forEach(c=>c.onclick=()=>{$$('#obStyle .wchip').forEach(x=>x.classList.remove('on'));c.classList.add('on');obStyle=c.dataset.s});
+function obGo(n){obStep=Math.min(4,Math.max(1,n));
+  $$('.obp').forEach(p=>p.classList.toggle('act',+p.dataset.ob===obStep));
+  $$('#obSteps i').forEach((b,i)=>b.classList.toggle('on',i<obStep));
+  $('#obBack').style.visibility=obStep===1?'hidden':'visible';
+  $('#obNext').querySelector('span').textContent=obStep===4?'Enter the studio ✨':'Next';}
+$('#obNext').onclick=()=>{
+  if(obStep===1&&!$('#obName').value.trim()){toast('Tell us your name first ✨');return}
+  if(obStep<4){obGo(obStep+1);return}
+  const name=$('#obName').value.trim(),work=$('#obWork').value.trim(),goal=$('#obGoal').value.trim();
+  profile={name,work,goal,wants:[...obWants],style:obStyle,minutes:+($('#obMin').value||25),topics:[goal,work].filter(Boolean)};
+  store.set('profile',profile);
+  const wt=$('#obTime').value;
+  if(wt){rems.push({id:Date.now(),t:'Time to work on: '+(goal||'your goal'),tm:wt,on:true});store.set('rems',rems);renderRems();
+    if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}
+  closeModal($('#obModal'));toast('Your studio is ready, '+name+' 🎉');refreshAll();setTimeout(openGuide,700);};
+$('#obBack').onclick=()=>obGo(obStep-1);
+obGo(1);
+
+/* ================= guide ================= */
+const GUIDE=[
+  ['🚀','Start here — 2 minutes','1) Answer the questions after entering — they make the app yours. 2) Open <b>Plan</b> and add 1–3 tasks for today. 3) Open <b>Growth</b> and watch your first video. Done — you already know 80% of NEXUM.'],
+  ['🏠','Home — your dashboard','Everything important in one place: your 🔥 streak, focus minutes, tasks left, quick buttons and a fresh video. Start every day here.'],
+  ['🗓️','Plan — run your day','Type what you will do today (small and clear is best) → press <b>Add</b>. Finished? Tap the circle — it turns black and the orange ring grows. Tap × to delete.'],
+  ['🌱','Growth — learn daily','Every day you get 3 NEW videos matched to your goal and learning style. Watch one → press <b>"Watched today"</b> → your 🔥 streak grows by 1. Miss a day and it restarts, so keep the chain alive!'],
+  ['📺','Library — save videos forever','Copy a video link from YouTube or Instagram → open <b>Library</b> → choose the tab → paste → press <b>Add</b>. Give it a name (like "Photoshop ep1"). Tap the card → the video opens and plays. Your shelf shows thumbnails.'],
+  ['⏰','Schedule — never forget','Type what to remember + pick a time → <b>Set</b>. When the time comes: chime + message + real phone notification (if you allow it). Use <b>"⚡ In 25 min"</b> for a quick work sprint. The switch pauses a reminder.'],
+  ['🎯','Focus — deep work','Pick 15/25/50 (or "My length") → <b>Start</b> → work on ONE thing until the ring closes. Minutes get banked into your stats and the 3D world glows gold ✨. Pause anytime.'],
+  ['✅','Habits — the compound engine','Add habits like "Read 10 pages" → tap the circle each day you do it. Each habit keeps its own 🔥 flame. Small daily reps = giant change over months.'],
+  ['📸','Capture — save anything fast','The gold <b>Capture</b> button (bottom-left) works from ANY screen: save a thought, a link, or a screenshot (paste it, or choose an image). Everything lands at the top of <b>Notes</b>.'],
+  ['📝','Notes — your notebook','Ideas, to-dos, things you learned — type and press <b>Keep</b>. Saved instantly on your device, forever.'],
+  ['🫧','Wellness — mood, breath, review','Tap a mood face to check in. Breathe with the orb: in 4 · hold 4 · out 4. In the evening fill the <b>Evening review</b>: your wins + one thing for tomorrow. Tomorrow-you will thank you.'],
+  ['🔎','Research — look smart','One tap opens searches about YOUR topics on X, Reddit, YouTube, News, Hacker News, Product Hunt, Pinterest and LinkedIn. Learn from many places, then come back and note what you found.'],
+  ['🤖','Assistant — your helper bot','The gold chat bubble knows everything. Try typing: "add task read 20 pages" · "remind me to stretch at 18:30" · "my plan" · "how am I doing" · "play music" · "next track" · "start focus" · "help".'],
+  ['🎵','Music — your soundtrack','Four generative tracks that never repeat exactly: <b>Morning Blue</b> (warm morning), <b>Gold Dust</b> (bright & sparkly), <b>Deep Focus</b> (calm minimal) and <b>Night Rain</b> (rain + soft notes). Music starts the moment you enter. Controls: sidebar (desktop) or Settings. On mobile tap the ♪ icon in the top bar to pause/play — volume slider included.'],
+  ['📊','Stats — see yourself grow','Streak, focus minutes, wins and notes are counted for you — on Home and on the entrance screen. They only grow if YOU grow them.'],
+  ['💾','Backup & privacy','All data stays on YOUR device. <b>Settings → Export backup</b> saves a file; <b>Import backup</b> restores it on any device. Nothing is uploaded anywhere.'],
+  ['📱','Install & publish','Chrome on your phone: menu ⋮ → <b>Add to Home screen</b> — NEXUM opens full-screen like a real app. To put it online: Settings → <b>Get the app</b> has a download button and 2-minute publish steps.']
+];
+$('#guideList').innerHTML=GUIDE.map(g=>`<div class="gitem"><div class="gi">${g[0]}</div><div><b>${g[1]}</b><p>${g[2]}</p></div></div>`).join('');
+
+/* ================= MUSIC SYSTEM ================= */
+const music={
+  on:false,trk:0,ctx:null,master:null,timer:null,next:0,beat:0,vol:.55,
+  tracks:[
+    {name:'Morning Blue',bpm:92,root:220,wave:'sine',scale:[0,3,5,7,10,12,15],chords:[[0,7,12],[5,12,17],[-3,4,9],[3,10,15]],pluck:.55},
+    {name:'Gold Dust',bpm:104,root:261.63,wave:'triangle',scale:[0,2,4,7,9,12,14],chords:[[0,4,9],[5,9,14],[-2,5,9],[2,7,12]],pluck:.7},
+    {name:'Deep Focus',bpm:72,root:110,wave:'sine',scale:[0,3,7,10,12,14],chords:[[0,7,12],[0,5,10],[-2,3,8],[3,8,12]],pluck:.28},
+    {name:'Night Rain',bpm:64,root:174.61,wave:'sine',scale:[0,3,5,10,12],chords:[[0,7],[3,10],[5,12],[-2,5]],pluck:.3,rain:true}
+  ],
+  ensure(){
+    if(this.ctx)return true;
+    try{
+      const C=window.AudioContext||window.webkitAudioContext;if(!C)return false;
+      this.ctx=new C();this.master=this.ctx.createGain();
+      this.master.gain.value=this.vol*.14;this.master.connect(this.ctx.destination);
+      return true;
+    }catch(e){return false}
+  },
+  start(){
+    if(!this.ensure())return;
+    if(this.ctx.state==='suspended')this.ctx.resume();
+    this.on=true;this.beat=0;this.next=this.ctx.currentTime+.1;
+    clearInterval(this.timer);this.timer=setInterval(()=>this.tick(),120);
+    this.setRain(!!this.cfg().rain);
+    this.ui();
+  },
+  stop(){this.on=false;clearInterval(this.timer);this.timer=null;this.setRain(false);this.ui()},
+  toggle(){this.on?this.stop():this.start()},
+  nextTrk(){this.trk=(this.trk+1)%this.tracks.length;this.beat=0;this.ui();toast('🎵 '+this.tracks[this.trk].name);this.setRain(this.on&&!!this.cfg().rain);if(this.on&&!this.timer)this.start()},
+  setVol(v){this.vol=v;if(this.master)this.master.gain.value=v*.14},
+  cfg(){return this.tracks[this.trk]},
+  tick(){
+    if(!this.on||!this.ctx)return;
+    const c=this.cfg(),beat=60/c.bpm,t=this.ctx.currentTime;
+    if(this.next<t-1){this.next=t+.05;this.beat=0}   // tab was suspended — resync, don't blast old notes
+    while(this.next<t+.45){
+      const when=Math.max(this.next,t+.02);
+      if(this.beat%8===0)this.pad(when,c);
+      if(Math.random()<c.pluck)this.pluck(when,c);
+      this.next+=beat;this.beat++;
+    }
+  },
+  pad(when,c){
+    const ctx=this.ctx,ch=c.chords[(this.beat/8|0)%c.chords.length];
+    ch.forEach(semi=>{
+      const f=c.root*Math.pow(2,semi/12);
+      const o=ctx.createOscillator();o.type=c.wave;o.frequency.value=f;
+      const g=ctx.createGain();g.gain.setValueAtTime(0,when);
+      g.gain.linearRampToValueAtTime(.05,when+1.2);g.gain.linearRampToValueAtTime(0,when+7.2);
+      const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.value=900;
+      o.connect(g);g.connect(fl);fl.connect(this.master);o.start(when);o.stop(when+7.4);
+    });
+  },
+  pluck(when,c){
+    const ctx=this.ctx,semi=c.scale[Math.floor(Math.random()*c.scale.length)],oct=Math.random()<.35?4:2;
+    const f=c.root*Math.pow(2,semi/12)*oct;
+    const o=ctx.createOscillator();o.type=c.wave;o.frequency.value=f;
+    const g=ctx.createGain();g.gain.setValueAtTime(.11,when);g.gain.exponentialRampToValueAtTime(.001,when+1.8);
+    o.connect(g);g.connect(this.master);o.start(when);o.stop(when+1.9);
+  },
+  ui(){
+    const n=this.cfg().name;
+    $('#musName').textContent=n;$('#musName2').textContent=n;
+    const ic=this.on?'#i-pause':'#i-play';
+    $('#musIco')&&$('#musIco').setAttribute('href',ic);
+    $('#musPlay2')&&$('#musPlay2').querySelector('use').setAttribute('href',ic);
+  },
+  setRain(a){
+    if(!this.ctx)return;
+    if(a&&!this.rain){
+      try{
+        const b=this.ctx.createBuffer(1,this.ctx.sampleRate*2,this.ctx.sampleRate);
+        const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+        const s=this.ctx.createBufferSource();s.buffer=b;s.loop=true;
+        const f=this.ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=420;
+        const g=this.ctx.createGain();g.gain.value=.05;
+        const lfo=this.ctx.createOscillator();lfo.frequency.value=.16;
+        const lg=this.ctx.createGain();lg.gain.value=.02;
+        lfo.connect(lg);lg.connect(g.gain);
+        s.connect(f);f.connect(g);g.connect(this.master);s.start();lfo.start();
+        this.rain={s,g,lfo};
+      }catch(e){}
+    }else if(!a&&this.rain){try{this.rain.s.stop();this.rain.lfo.stop()}catch(e){}this.rain=null}
+  }
+};
+$('#musPlay').onclick=()=>music.toggle();
+$('#musPlay2').onclick=()=>music.toggle();
+$('#musNext').onclick=()=>music.nextTrk();
+$('#musNext2').onclick=()=>music.nextTrk();
+$('#musVol').oninput=e=>{$('#musVol2').value=e.target.value;music.setVol(e.target.value/100)};
+$('#musVol2').oninput=e=>{$('#musVol').value=e.target.value;music.setVol(e.target.value/100)};
+$('#mMus').onclick=()=>music.toggle();
+function chime(){try{
+  if(!music.ensure())return;
+  if(music.ctx.state==='suspended')music.ctx.resume();
+  [659.25,880].forEach((f,i)=>{const o=music.ctx.createOscillator();o.frequency.value=f;const g=music.ctx.createGain();
+    const t0=music.ctx.currentTime+i*.18;g.gain.setValueAtTime(.12,t0);g.gain.exponentialRampToValueAtTime(.001,t0+.5);
+    o.connect(g);g.connect(music.master);o.start(t0);o.stop(t0+.55)})}catch(e){}}
+
+/* ================= 3D GLASS WORLD ================= */
+let worldPulse=null,worldEnter=null;
+try{
+  const THREE=await import('three');
+  const canvas=$('#stage3d');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  const scene=new THREE.Scene();
+  scene.fog=new THREE.Fog(0x0a0a0a,16,44);
+  const cam=new THREE.PerspectiveCamera(38,1,.1,100);
+  cam.position.set(0,2.4,11.5);
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  const envScene=new THREE.Scene();envScene.background=new THREE.Color(0x141414);
+  const mkPlane=(x,y,z,c,w,h)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:c}));m.position.set(x,y,z);m.lookAt(0,0,0);envScene.add(m)};
+  mkPlane(0,7,0,0xffffff,10,10);mkPlane(-8,2,4,0xcf8047,7,10);mkPlane(8,1,-3,0x9db4ff,7,10);mkPlane(0,-7,0,0x1c1c1c,10,10);mkPlane(0,1,-9,0xffffff,12,7);
+  const env=pmrem.fromScene(envScene,.04).texture;
+  scene.environment=env;
+  const key=new THREE.DirectionalLight(0xffffff,2.2);key.position.set(5,9,6);scene.add(key);
+  const rim=new THREE.PointLight(0xcf8047,60,26);rim.position.set(-6,3.4,-4);scene.add(rim);
+  scene.add(new THREE.AmbientLight(0xffffff,.35));
+  const stage=new THREE.Mesh(new THREE.CircleGeometry(8,64),new THREE.MeshStandardMaterial({color:0x0b0b0e,roughness:.22,metalness:.55,envMapIntensity:.7}));
+  stage.rotation.x=-Math.PI/2;stage.position.y=-.02;scene.add(stage);
+  const profile=[[0,0],[1.42,0],[1.42,.24],[1.05,.34],[.66,.55],[.5,.9],[.35,1.75],[.3,2.6],[.44,3.02],[.17,3.28],[.31,3.5],[.14,3.62],[.52,3.92],[.2,4.02],[.35,4.28],[.12,4.42]].map(p=>new THREE.Vector2(p[0],p[1]));
+  const glassMat=new THREE.MeshPhysicalMaterial({color:0xffffff,metalness:0,roughness:.06,transmission:.94,thickness:1.5,ior:1.45,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.2,transparent:true});
+  const goldMat=new THREE.MeshStandardMaterial({color:0xE8B84B,metalness:1,roughness:.16,envMapIntensity:1.4});
+  const queenWrap=new THREE.Group();
+  const queen=new THREE.Mesh(new THREE.LatheGeometry(profile,64),glassMat);
+  queenWrap.add(queen);
+  const baseRing=new THREE.Mesh(new THREE.TorusGeometry(1.42,.045,12,64),goldMat);baseRing.rotation.x=Math.PI/2;baseRing.position.y=.24;queenWrap.add(baseRing);
+  const collar=new THREE.Mesh(new THREE.TorusGeometry(.5,.05,12,64),goldMat);collar.rotation.x=Math.PI/2;collar.position.y=3.92;queenWrap.add(collar);
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(.13,24,18),goldMat);orb.position.y=4.56;queenWrap.add(orb);
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const b=new THREE.Mesh(new THREE.SphereGeometry(.075,16,12),goldMat);b.position.set(Math.cos(a)*.44,4.06,Math.sin(a)*.44);queenWrap.add(b)}
+  scene.add(queenWrap);
+  const spheres=[];
+  [[-3.4,2.2,-2,.5],[3.8,1.4,-3,.36],[2.4,3.4,-1.5,.28]].forEach(([x,y,z,r])=>{
+    const s=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),glassMat);s.position.set(x,y,z);scene.add(s);spheres.push(s)});
+  const N=260,pos=new Float32Array(N*3);
+  for(let i=0;i<N;i++){const a=Math.random()*Math.PI*2,r=1.5+Math.random()*5.5;pos[i*3]=Math.cos(a)*r;pos[i*3+1]=Math.random()*5.5;pos[i*3+2]=Math.sin(a)*r}
+  const dustGeo=new THREE.BufferGeometry();dustGeo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xE8B84B,size:.055,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false}));
+  scene.add(dust);
+  let ptrX=0,ptrY=0,pulse=0,camZ=16.5,targetZ=16.5;
+  addEventListener('pointermove',e=>{ptrX=e.clientX/innerWidth*2-1;ptrY=e.clientY/innerHeight*2-1});
+  function resize(){const r={width:innerWidth,height:innerHeight};renderer.setSize(r.width,r.height,false);cam.aspect=r.width/Math.max(r.height,1);cam.updateProjectionMatrix()}
+  addEventListener('resize',resize);resize();
+  worldPulse=()=>{pulse=1};
+  worldEnter=()=>{targetZ=11.5};
+  const clock=new THREE.Clock();
+  (function tick(){requestAnimationFrame(tick);
+    const t=clock.getElapsedTime();
+    queenWrap.rotation.y+=.004;
+    queenWrap.position.y=Math.sin(t*.8)*.08;
+    queenWrap.rotation.z=Math.sin(t*.5)*.02;
+    spheres.forEach((s,i)=>{s.position.y+=Math.sin(t*.7+i*2)*.0018;s.rotation.y=t*.2+i});
+    const p=dustGeo.attributes.position;
+    for(let i=0;i<N;i++){let y=p.getY(i)+(0.0035+pulse*.05);if(y>5.8)y=0;p.setY(i,y)}
+    p.needsUpdate=true;
+    if(pulse>0){pulse=Math.max(0,pulse-.015);rim.intensity=60+pulse*140;queenWrap.scale.setScalar(1+pulse*.05)}
+    else{rim.intensity+=(60-rim.intensity)*.05;queenWrap.scale.lerp(new THREE.Vector3(1,1,1),.05)}
+    dust.material.opacity=.7+pulse*.3;
+    camZ+=(targetZ-camZ)*.04;
+    cam.position.x+=((ptrX*1.1)-cam.position.x)*.03;
+    cam.position.y+=((2.4-ptrY*.7)-cam.position.y)*.03;
+    cam.position.z=camZ;
+    cam.lookAt(0,2.1,0);
+    renderer.render(scene,cam);
+  })();
+}catch(e){console.warn('3D world unavailable',e)}
+function pulseWorld(){worldPulse&&worldPulse()}
+
+/* ================= HOME ================= */
+const QUOTES=['One good plan, one good video, one good focus round. That\'s a day that moves you.','Small steps, taken daily, become the person you\'re becoming.','You don\'t need more time — you need one clear task.','Finish something small today. Future-you is watching.','The streak isn\'t the prize. The person building it is.'];
+function renderHome(){
+  const nm=(profile&&profile.name)||'friend';
+  const h=new Date().getHours();
+  $('#hPeriod').textContent=h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+  $('#hName').textContent=nm.charAt(0).toUpperCase()+nm.slice(1)+' ✦';
+  $('#hQuote').textContent=QUOTES[Math.floor(Date.now()/864e5)%QUOTES.length];
+  $('#hWants').textContent=(profile&&profile.wants&&profile.wants.length)?'Built for you: '+profile.wants.join(' · '):'';
+  const s=store.get('streak',{count:0});
+  $('#hStreak').textContent=s.count||0;$('#sStreak').textContent=s.count||0;
+  $('#hFocusMin').textContent=store.get('focusTotal',0);
+  const tds=tasks.filter(t=>t.day===today());
+  $('#hDone').textContent=tds.filter(t=>t.done).length;
+  $('#hNotesN').textContent=notes.length;
+  $('#hWatched').style.opacity=s.last===today()?'.5':'1';
+  /* tasks preview */
+  const box=$('#hTasks');box.innerHTML='';
+  if(!tds.length){box.innerHTML='<div class="empty" style="background:transparent;border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.55)">No tasks yet — tap "Add a task" above.</div>'}
+  else tds.slice(0,4).forEach(t=>{const d=document.createElement('div');d.className='task'+(t.done?' done':'');
+    d.style.background='rgba(255,255,255,.06)';d.style.borderColor='rgba(255,255,255,.14)';d.style.color='#fff';
+    d.innerHTML=`<span class="tchk">✓</span><span class="ttxt" style="flex:1">${esc(t.t)}</span>`;
+    d.querySelector('.tchk').onclick=()=>{t.done=!t.done;saveTasks()};
+    box.append(d)});
+  /* video pick */
+  const vb=$('#hVideo');vb.innerHTML='';
+  const topics=(profile&&profile.topics&&profile.topics.length)?profile.topics.filter(Boolean):['focus and deep work'];
+  const day=Math.floor(Date.now()/864e5),MODS=['full course','tutorial for beginners','tips and tricks','step by step guide','explained simply','in one hour','masterclass','mistakes to avoid','project from scratch'];
+  const tp=topics[day%topics.length],mod=(profile&&profile.style)?profile.style:MODS[(day+1)%MODS.length];
+  vb.innerHTML=`<a class="vid hvcard" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(tp+' '+mod)}"><div class="th"><svg class="ic fill"><use href="#i-play"/></svg></div><div class="vb"><div class="micro" style="color:rgba(255,255,255,.45)">Fresh today</div><b>${esc(tp)} — ${mod}</b></div></a>`;
+}
+$('#hWatched').onclick=watchedToday;
+
+/* ================= PLAN ================= */
+let tasks=store.get('tasks',[]);
+function renderTasks(){const box=$('#taskList');if(!box)return;box.innerHTML='';
+  const list=tasks.filter(t=>t.day===today());
+  list.forEach(t=>{const li=document.createElement('div');li.className='task'+(t.done?' done':'');
+    li.innerHTML=`<span class="tchk">✓</span><span class="ttxt" style="flex:1">${esc(t.t)}</span><button class="tdel" aria-label="Delete">×</button>`;
+    li.querySelector('.tchk').onclick=()=>{t.done=!t.done;saveTasks();if(t.done){toast('Nice — one more done ✓');chime()}};
+    li.querySelector('.tdel').onclick=()=>{tasks=tasks.filter(x=>x!==t);saveTasks()};
+    box.append(li)});
+  if(!list.length)box.innerHTML='<div class="empty">No tasks yet — add the one that would make today a win.</div>';
+  const pct=list.length?Math.round(list.filter(t=>t.done).length/list.length*100):0;
+  $('#ring').style.setProperty('--p',pct);$('#planPct').textContent=pct+'%';}
+function saveTasks(){store.set('tasks',tasks);renderTasks();setStats();if(curView==='home')renderHome()}
+function addTask(){const v=$('#taskInput').value.trim();if(!v)return;
+  tasks.push({id:Date.now(),t:v,done:false,day:today()});$('#taskInput').value='';saveTasks();toast('Task added ✓')}
+$('#addTask').onclick=addTask;
+$('#taskInput').addEventListener('keydown',e=>{if(e.key==='Enter')addTask()});
+
+/* ================= GROWTH ================= */
+const MODS=['full course','tutorial for beginners','tips and tricks','step by step guide','explained simply','in one hour','masterclass','mistakes to avoid','project from scratch'];
+function bumpStreak(){const s=store.get('streak',{count:0,last:null});if(s.last===today())return false;
+  const y=yesterday();s.count=s.last===y?s.count+1:1;s.last=today();store.set('streak',s);return true}
+function watchedToday(){
+  if(bumpStreak()){toast('Streak +1 🔥');pulseWorld();chime()}else toast('Already counted today ✓');
+  renderGrowth();setStats();if(curView==='home')renderHome()}
+$('#watchedBtn').onclick=watchedToday;
+function renderGrowth(){const s=store.get('streak',{count:0,last:null});
+  $('#streakN').textContent=s.count;
+  $('#streakMsg').textContent=s.count?`Keep the chain alive — one video a day.${s.last===today()?' Counted today ✓':''}`:'Watch one video today to start your streak.';
+  $('#watchedBtn').style.opacity=s.last===today()?'.45':'1';
+  const box=$('#dailyVideos');if(!box)return;box.innerHTML='';
+  const topics=(profile&&profile.topics&&profile.topics.length)?profile.topics.filter(Boolean):['focus and deep work','learning new skills'];
+  const day=Math.floor(Date.now()/864e5);
+  topics.slice(0,3).forEach((tp,i)=>{const mod=(i===0&&profile&&profile.style)?profile.style:MODS[(day+i*2)%MODS.length];
+    const a=document.createElement('a');a.className='vid';a.target='_blank';a.rel='noopener';
+    a.href='https://www.youtube.com/results?search_query='+encodeURIComponent(tp+' '+mod);
+    a.innerHTML=`<div class="th"><svg class="ic fill"><use href="#i-play"/></svg></div><div class="vb"><div class="micro">Fresh today</div><b>${esc(tp)} — ${mod}</b></div>`;
+    box.append(a)})}
+
+/* ================= LIBRARY ================= */
+let pl=store.get('playlists',{yt:[],ig:[]});
+let curTab='yt';
+function ytId(u){const m=String(u).match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/);return m?m[1]:null}
+function renderPl(){const grid=$('#plGrid');if(!grid)return;grid.innerHTML='';
+  const items=pl[curTab];
+  if(!items.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1">Your ${curTab==='yt'?'YouTube':'Instagram'} shelf is empty — paste a link above.</div>`;return}
+  items.forEach((it,idx)=>{const d=document.createElement('div');d.className='plitem';
+    if(curTab==='yt'&&it.id){
+      d.innerHTML=`<a class="plink" href="${esc(it.u)}" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/${it.id}/hqdefault.jpg" alt="" loading="lazy"/></a><div class="pbody"><a class="plink" href="${esc(it.u)}" target="_blank" rel="noopener"><b>${esc(it.name||'Watch video')}</b><span class="micro" style="color:rgba(255,255,255,.45)">YouTube</span></a><button class="pdel" aria-label="Remove">×</button></div>`;
+    }else{
+      d.innerHTML=`<a class="plink pbig" href="${esc(it.u)}" target="_blank" rel="noopener">↗</a><div class="pbody"><a class="plink" href="${esc(it.u)}" target="_blank" rel="noopener"><b>${esc(it.name||'Open link')}</b><span class="micro" style="color:rgba(255,255,255,.45)">Instagram</span></a><button class="pdel" aria-label="Remove">×</button></div>`;
+    }
+    d.querySelector('.pdel').onclick=e=>{e.preventDefault();pl[curTab].splice(idx,1);store.set('playlists',pl);renderPl()};
+    grid.append(d)})}
+$('#tabYT').onclick=()=>{curTab='yt';$('#tabYT').classList.add('on');$('#tabIG').classList.remove('on');renderPl()};
+$('#tabIG').onclick=()=>{curTab='ig';$('#tabIG').classList.add('on');$('#tabYT').classList.remove('on');renderPl()};
+$('#plAdd').onclick=()=>{const u=$('#plUrl').value.trim();if(!u){toast('Paste a link first');return}
+  const nm=$('#plName').value.trim();
+  if(curTab==='yt'){const id=ytId(u);if(!id){toast('That doesn\'t look like a YouTube video link');return}pl.yt.unshift({u,id,name:nm})}
+  else pl.ig.unshift({u,name:nm});
+  store.set('playlists',pl);$('#plUrl').value='';$('#plName').value='';renderPl();toast('Added to your shelf ✓')};
+
+/* ================= SCHEDULE ================= */
+let rems=store.get('rems',[]);
+function renderRems(){const box=$('#remList');if(!box)return;box.innerHTML='';
+  if(!rems.length){box.innerHTML='<div class="empty">No reminders yet — set your first one above.</div>';return}
+  rems.forEach(r=>{const d=document.createElement('div');d.className='rem'+(r.on?'':' off');
+    d.innerHTML=`<span class="rtime">${esc(r.tm)}</span><span class="rtxt">${esc(r.t)}</span><span class="sw${r.on?' on':''}" role="switch"></span><button class="tdel">×</button>`;
+    d.querySelector('.sw').onclick=()=>{r.on=!r.on;store.set('rems',rems);renderRems()};
+    d.querySelector('.tdel').onclick=()=>{rems=rems.filter(x=>x!==r);store.set('rems',rems);renderRems()};
+    box.append(d)})}
+$('#remAdd').onclick=()=>{const t=$('#remText').value.trim(),tm=$('#remTime').value;
+  if(!t||!tm){toast('Add a note and a time ⏰');return}
+  rems.push({id:Date.now(),t,tm,on:true});store.set('rems',rems);$('#remText').value='';renderRems();toast('Reminder set ✓');
+  if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()};
+const fired=store.get('fired',{});
+function checkRems(){const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  rems.forEach(r=>{if(!r.on||fired[r.id]===today()||r.tm>hm)return;
+    /* skip if the reminder was created today already past its own time (or a sprint that lands tomorrow) */
+    const cd=new Date(r.id||0),cDay=cd.toLocaleDateString('en-CA'),
+          cHm=String(cd.getHours()).padStart(2,'0')+':'+String(cd.getMinutes()).padStart(2,'0');
+    if(cDay===today()&&r.tm<=cHm)return;
+    fired[r.id]=today();store.set('fired',fired);
+    toast('⏰ '+r.t,6000);chime();pulseWorld();
+    try{if('Notification' in window&&Notification.permission==='granted')new Notification('NEXUM reminder',{body:r.t})}catch(e){}})}
+setInterval(checkRems,20000);
+if(Object.keys(fired).length>300){const keep={};Object.keys(fired).forEach(k=>{if(fired[k]===today())keep[k]=fired[k]});store.set('fired',keep)}
+
+/* ================= FOCUS ================= */
+let fTotal=store.get('focusTotal',0),fPlan=25,fLeft=25*60,fRun=false,fInt=null;
+function fFmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function fRender(){$('#focusTime').textContent=fFmt(fLeft);$('#focusRing').style.setProperty('--p',((1-fLeft/(fPlan*60))*100).toFixed(1))}
+function fSet(m){fPlan=m;fLeft=m*60;fRun=false;clearInterval(fInt);
+  $('#focusStart').querySelector('span').textContent='Start';
+  $('#focusStart').querySelector('use').setAttribute('href','#i-play');
+  fRender();$$('.fchip').forEach(c=>c.classList.toggle('on',+c.dataset.m===m))}
+$$('.fchip').forEach(c=>{if(c.id==='fMine')return;c.onclick=()=>fSet(+c.dataset.m)});
+$('#fMine').onclick=()=>{const m=(profile&&profile.minutes)||25;fSet(m);toast(`Your length: ${m} minutes`)};
+$('#focusStart').onclick=()=>{
+  fRun=!fRun;
+  $('#focusStart').querySelector('span').textContent=fRun?'Pause':'Start';
+  $('#focusStart').querySelector('use').setAttribute('href',fRun?'#i-pause':'#i-play');
+  if(fRun){fInt=setInterval(()=>{fLeft--;if(fLeft<=0){clearInterval(fInt);fRun=false;fLeft=0;fRender();fDone();return}fRender()},1000)}
+  else clearInterval(fInt)};
+$('#focusReset').onclick=()=>fSet(fPlan);
+function fDone(){fTotal+=fPlan;store.set('focusTotal',fTotal);setStats();
+  toast(`Focus round complete — ${fPlan} min banked 🏆`,5000);chime();pulseWorld();
+  setTimeout(()=>fSet(fPlan),1500)}
+
+/* ================= NOTES ================= */
+let notes=store.get('notes',[]);
+function renderNotes(){const box=$('#noteList');if(!box)return;box.innerHTML='';
+  if(!notes.length)box.innerHTML='<div class="empty">Nothing captured yet — your first idea goes here.</div>';
+  notes.forEach((n,i)=>{const d=document.createElement('div');d.className='nitem';
+    d.innerHTML=`<span class="nt">${esc(n.t)}</span><span class="nd">${esc(n.ts)}</span><button class="tdel">×</button>`;
+    d.querySelector('.tdel').onclick=()=>{notes.splice(i,1);store.set('notes',notes);renderNotes();setStats()};
+    box.append(d)});
+  renderCaps()}
+function addNote(){const v=$('#noteInput').value.trim();if(!v)return;
+  const ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  notes.unshift({t:v,ts});store.set('notes',notes);$('#noteInput').value='';renderNotes();setStats();toast('Note kept ✓')}
+$('#noteAdd').onclick=addNote;
+$('#noteInput').addEventListener('keydown',e=>{if(e.key==='Enter')addNote()});
+
+/* ================= WELLNESS ================= */
+const MOODS=['Rough day — be kind to yourself. A tiny task can turn it.','It\'s okay to feel meh. One small win changes the angle.','Steady. Momentum loves the middle.','Good energy — spend it on your goal.','Amazing. The gold dust approves. ✨'];
+function renderWellness(){
+  const log=store.get('mood',[]),ex=log.find(x=>x.d===today());
+  if(ex){$$('.mood').forEach(x=>x.classList.toggle('sel',+x.dataset.v===ex.v));$('#moodMsg').textContent=MOODS[ex.v]}
+  renderReview()}
+$$('.mood').forEach(b=>b.onclick=()=>{const v=+b.dataset.v;const log=store.get('mood',[]);
+  const ex=log.find(x=>x.d===today());if(ex)ex.v=v;else log.push({d:today(),v});
+  store.set('mood',log);$$('.mood').forEach(x=>x.classList.toggle('sel',+x.dataset.v===v));
+  $('#moodMsg').textContent=MOODS[v];pulseWorld()});
+let bRun=false,bInt=null;
+$('#breathBtn').onclick=()=>{bRun=!bRun;$('#breathBtn').textContent=bRun?'Stop breathing':'Start breathing';
+  const orb=$('#breath');clearInterval(bInt);
+  if(bRun){let ph=0;const names=['Breathe in… 4','Hold… 4','Breathe out… 4','Hold… 4'];
+    const step=()=>{$('#breathTxt').textContent=names[ph];orb.classList.toggle('breathrun',ph===0);ph=(ph+1)%4};
+    step();bInt=setInterval(step,4000)}
+  else{$('#breathTxt').textContent='4 seconds in · 4 hold · 4 out';orb.classList.remove('breathrun')}};
+
+/* ================= RESEARCH ================= */
+const RSRC=[['X / Twitter','https://x.com/search?q='],['Reddit','https://www.reddit.com/search/?q='],['YouTube','https://www.youtube.com/results?search_query='],['News','https://news.google.com/search?q='],['Hacker News','https://hn.algolia.com/?q='],['Product Hunt','https://www.producthunt.com/search?q='],['Pinterest','https://www.pinterest.com/search/pins/?q='],['LinkedIn','https://www.linkedin.com/search/results/all/?keywords=']];
+function renderResearch(){const box=$('#resLinks');if(!box)return;box.innerHTML='';
+  const topics=(profile&&profile.topics&&profile.topics.length)?profile.topics.filter(Boolean):['focus and deep work','learning new skills'];
+  topics.slice(0,4).forEach(tp=>{const d=document.createElement('div');d.className='card rcard';
+    d.innerHTML=`<b style="font-weight:600">${esc(tp)}</b><div class="rlinks">${RSRC.map(([n,u])=>`<a class="pill outline rlink" target="_blank" rel="noopener" href="${u}${encodeURIComponent(tp)}">${n} ↗</a>`).join('')}</div>`;
+    box.append(d)})}
+
+/* ================= SETTINGS ================= */
+function renderSettings(){
+  if(profile){
+    $('#pAvatar').textContent=(profile.name||'?').charAt(0).toUpperCase();
+    $('#pName').textContent=profile.name||'Guest';
+    $('#pMeta').textContent=[profile.work,profile.goal].filter(Boolean).join(' · ')||'—';
+    $('#setName').value=profile.name||'';$('#setWork').value=profile.work||'';
+    $('#setGoal').value=profile.goal||'';$('#setMin').value=String(profile.minutes||25);
+  }}
+$('#setSave').onclick=()=>{
+  const name=$('#setName').value.trim()||'friend';
+  profile=Object.assign({},profile||{},{name,work:$('#setWork').value.trim(),goal:$('#setGoal').value.trim(),minutes:+$('#setMin').value||25,
+    topics:[$('#setGoal').value.trim(),$('#setWork').value.trim()].filter(Boolean)});
+  store.set('profile',profile);renderSettings();renderHome();renderGrowth();renderResearch();toast('Profile saved ✓')};
+
+/* ================= STATS ================= */
+function countUp(el,target){if(!el)return;el.textContent=target}
+function setStats(){
+  const s=store.get('streak',{count:0});
+  $('#sStreak').textContent=s.count||0;
+  if(curView==='home')renderHome();
+}
+
+/* ================= BOT ================= */
+function greet(){const nm=(profile&&profile.name)||'friend';return `Hey ${nm}! I'm your studio assistant. Ask me about your <b>plan</b>, <b>videos</b>, <b>focus</b>, <b>reminders</b> — or say hi.`}
+function switchChat(){const p=$('#chatPanel');p.classList.toggle('open');
+  if(p.classList.contains('open')&&!$('#chatMsgs').children.length)botSay(greet())}
+function closeChatPanel(){$('#chatPanel').classList.remove('open')}
+$('#chatBtn').onclick=switchChat;$('#sideBot').onclick=()=>{if(curView!=='home')switchView('home');switchChat()};
+function botSay(html){const d=document.createElement('div');d.className='cm';d.innerHTML=html;$('#chatMsgs').append(d);$('#chatMsgs').scrollTop=1e9}
+function userSay(t){const d=document.createElement('div');d.className='cm me';d.textContent=t;$('#chatMsgs').append(d);$('#chatMsgs').scrollTop=1e9}
+function reply(t){const s=t.trim(),l=s.toLowerCase();const nm=(profile&&profile.name)||'friend';
+  /* — commands that DO things — */
+  const mTask=s.match(/^(?:add (?:task|todo)|task add)\s+(.+)/i);
+  if(mTask){tasks.push({id:Date.now(),t:mTask[1],done:false,day:today()});saveTasks();return `Added to today's plan: “<b>${esc(mTask[1])}</b>” ✅`;}
+  const mRem=s.match(/remind me (?:to )?(.+?) (?:at|by|on) (\d{1,2})[:.](\d{1,2})/i);
+  if(mRem){const h=Math.min(23,+mRem[2]),mn=Math.min(59,+mRem[3]);
+    const tm=String(h).padStart(2,'0')+':'+String(mn).padStart(2,'0');
+    rems.push({id:Date.now(),t:mRem[1],tm,on:true});store.set('rems',rems);renderRems();return `Set ⏰ <b>${esc(mRem[1])}</b> at ${tm}. I'll chime when it's time!`;}
+  if(/^(start|begin) (a )?focus/.test(l)){switchView('focus');return 'Focus forge is open 🔥 Pick your length and press Start.';}
+  if(/^play music|^start music|^music on/.test(l)){music.start();return 'Music on 🎵';}
+  if(/^pause music|^stop music|^music off/.test(l)){music.stop();return 'Music paused 🤫';}
+  if(/^next (track|song|music)/.test(l)){music.nextTrk();return 'Switched to <b>'+music.cfg().name+'</b> 🎵';}
+  if(/my plan|today'?s plan|what.?s left/.test(l)){const list=tasks.filter(x=>x.day===today()&&!x.done);
+    return list.length?'Your open tasks:<br>'+list.slice(0,5).map(x=>'• '+esc(x.t)).join('<br>'):'Plan is clear! Add a task or enjoy the win 😌';}
+  if(/how am i|my stats|progress/.test(l)){const st=store.get('streak',{count:0});
+    return `📊 Streak: <b>${st.count||0} days</b> · Focus: <b>${store.get('focusTotal',0)} min</b> · Wins: <b>${tasks.filter(x=>x.done).length}</b> · Notes: <b>${notes.length}</b>. ${st.count?'Keep the chain!':'Start today 💪'}`;}
+  /* — answers — */
+  if(/help|what can you do|commands/.test(l))return `I can DO things:<br>• "add task …"<br>• "remind me to … at 18:30"<br>• "start focus" · "play music" · "next track"<br>• "my plan" · "how am I doing"<br>And I can answer about any feature.`;
+  if(/^(hi|hello|hey|yo)\b/.test(l))return `Hey ${nm}! What are we moving today?`;
+  if(/video|learn|grow|streak/.test(l))return `Your 3 fresh videos are on the <b>Growth</b> screen — new ones every day, matched to "${(profile&&profile.style)||'tutorials'}" style. Watch one, press "Watched today" 🔥`;
+  if(/focus|timer|pomodoro/.test(l))return `Open <b>Focus</b>, pick ${(profile&&profile.minutes)||25} minutes, press Start, and do ONE task. I'll guard the silence.`;
+  if(/remind|schedule|alarm|remember/.test(l))return `Tell me here! Try: <b>"remind me to stretch at 18:30"</b> — or use the Schedule screen. ⚡ In 25 min is great for sprints.`;
+  if(/music|song|audio|sound/.test(l))return `Four generative tracks: <b>Morning Blue</b>, <b>Gold Dust</b>, <b>Deep Focus</b> and <b>Night Rain</b>. Try "play music", "next track" or "pause music" right here.`;
+  if(/sad|tired|stress|anxious|mood|overwhelm/.test(l))return `That's okay. Try 3 slow breaths on the <b>Wellness</b> orb, then one tiny task. Momentum follows action, not the other way.`;
+  if(/habit/.test(l))return `Open <b>Habits</b>, add one tiny habit, and tap its circle daily. The 🔥 flame is your proof.`;
+  if(/capture|screenshot/.test(l))return `Tap the gold <b>Capture</b> button (bottom-left) from any screen — save text, links or screenshots. They land at the top of Notes.`;
+  if(/backup|save|export|import/.test(l))return `Everything lives on this device. Use <b>Export backup</b> in Settings to save a file you can restore anywhere.`;
+  if(/who are you|what are you|nexum/.test(l))return `I'm NEXUM's studio assistant — part planner, part coach, fully on your side.`;
+  if(/phone|install|publish|download/.test(l))return `Phone: Chrome menu ⋮ → <b>Add to Home screen</b>. Publishing: Settings → <b>Get the app</b> → download or follow the 2-minute steps.`;
+  return `Noted ✍️ Try "add task …", "remind me to … at 18:30", "my plan", "how am I doing", or "help".`;}
+function sendChat(){const v=$('#chatInput').value.trim();if(!v)return;userSay(v);$('#chatInput').value='';
+  setTimeout(()=>botSay(reply(v)),450)}
+$('#chatSend').onclick=sendChat;
+$('#chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat()});
+
+/* ================= BACKUP / RESET ================= */
+function exportBackup(){const data={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('nexum_'))data[k]=localStorage.getItem(k)}
+  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='nexum-backup-'+today()+'.json';a.click();toast('Backup saved ✓')}
+$('#setExport').onclick=exportBackup;
+$('#setImport').onclick=()=>$('#bkFile').click();
+$('#bkFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);let n=0;Object.entries(d).forEach(([k,v])=>{if(k.startsWith('nexum_')){localStorage.setItem(k,v);n++}});
+    toast(`Restored ${n} entries — reloading…`);setTimeout(()=>location.reload(),900)}catch(err){toast('That file didn\'t work')}};r.readAsText(f)};
+$('#setReset').onclick=()=>{if(confirm('Reset the studio? This erases ALL NEXUM data on this device.')){
+  Object.keys(localStorage).filter(k=>k.startsWith('nexum_')).forEach(k=>localStorage.removeItem(k));location.reload()}};
+
+/* ================= HABITS ================= */
+let habits=store.get('habits',[]);
+function renderHabits(){const box=$('#habitList');if(!box)return;box.innerHTML='';
+  if(!habits.length){box.innerHTML='<div class="empty">No habits yet — start with one tiny habit.</div>';return}
+  habits.forEach(hb=>{const done=hb.last===today();const d=document.createElement('div');d.className='task habit'+(done?' doneh':'');
+    d.innerHTML=`<span class="tchk">✓</span><span class="ttxt" style="flex:1">${esc(hb.t)}</span><span class="fl">🔥 ${hb.count||0}</span><button class="tdel" aria-label="Delete">×</button>`;
+    d.querySelector('.tchk').onclick=()=>{if(hb.last===today()){toast('Already kept today ✓');return}
+      hb.count=(hb.last===yesterday())?(hb.count||0)+1:1;hb.last=today();store.set('habits',habits);renderHabits();toast('Habit kept — 🔥 '+(hb.count||0));pulseWorld();chime()};
+    d.querySelector('.tdel').onclick=()=>{habits=habits.filter(x=>x!==hb);store.set('habits',habits);renderHabits()};
+    box.append(d)})}
+$('#habitAdd').onclick=()=>{const v=$('#habitInput').value.trim();if(!v)return;
+  habits.push({id:Date.now(),t:v,count:0,last:null});$('#habitInput').value='';store.set('habits',habits);renderHabits();toast('Habit added ✓')};
+$('#habitInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('#habitAdd').onclick()});
+
+/* ================= EVENING REVIEW ================= */
+function renderReview(){
+  const r=store.get('review_'+today(),null);
+  if(r){$('#rvWins').value=r.w||'';$('#rvTomorrow').value=r.t||'';$('#rvSave').textContent='Update review'}
+  const yKey=yesterday();
+  const y=store.get('review_'+yKey,null);
+  $('#rvPast').textContent=y?`Yesterday: ${y.w||'—'} · planned: ${y.t||'—'}`:'No review from yesterday yet.'}
+$('#rvSave').onclick=()=>{store.set('review_'+today(),{w:$('#rvWins').value.trim(),t:$('#rvTomorrow').value.trim()});
+  toast('Review saved — nice day ✓');pulseWorld();chime()};
+
+/* ================= QUICK CAPTURE ================= */
+let caps=store.get('captures',[]);
+function renderCaps(){const g=$('#capGrid'),tx=$('#capTexts');if(!g)return;g.innerHTML='';tx.innerHTML='';
+  caps.filter(c=>c.type==='img').forEach(c=>{const im=document.createElement('img');im.src=c.v;im.alt='capture';im.loading='lazy';g.append(im)});
+  caps.filter(c=>c.type==='text').slice(0,8).forEach(c=>{const d=document.createElement('div');d.className='nitem';
+    const body=/^https?:\/\//.test(c.t)?`<a href="${esc(c.t)}" target="_blank" rel="noopener" style="color:#cf8047">${esc(c.t)}</a>`:esc(c.t);
+    d.innerHTML=`<span class="nt">${body}</span><span class="nd">${esc(c.ts)}</span><button class="tdel">×</button>`;
+    d.querySelector('.tdel').onclick=()=>{caps=caps.filter(x=>x!==c);store.set('captures',caps);renderCaps()};
+    tx.append(d)});
+  if(!caps.length)tx.innerHTML='<div class="empty">Nothing captured yet — tap the gold Capture button anytime.</div>'}
+function pushCap(c){caps.unshift(c);if(caps.length>40)caps.length=40;
+  try{localStorage.setItem('nexum_captures',JSON.stringify(caps))}
+  catch(e){ /* storage full — drop the oldest image and retry once */
+    const drop=caps.findIndex(x=>x.type==='img');
+    if(drop>-1){caps.splice(drop,1);
+      try{localStorage.setItem('nexum_captures',JSON.stringify(caps));toast('Old screenshot removed to free space')}catch(e2){caps.length=Math.min(caps.length,10);
+        try{localStorage.setItem('nexum_captures',JSON.stringify(caps))}catch(e3){toast('Storage full — delete some captures')}}}
+    else toast('Storage full — delete some captures')}
+  renderCaps()}
+$('#capFab').onclick=()=>openModal('capModal');
+$('#sideCap').onclick=()=>{switchView('notes');setTimeout(()=>openModal('capModal'),60)};
+$('#capSave').onclick=()=>{const v=$('#capInput').value.trim();if(!v){toast('Type or paste something first');return}
+  pushCap({type:'text',t:v,ts:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  $('#capInput').value='';closeModal($('#capModal'));toast('Captured ✓')};
+function saveImgBlob(blob){return new Promise(res=>{const img=new Image();const url=URL.createObjectURL(blob);
+  img.onload=()=>{const w=Math.min(720,img.width),scale=w/img.width;const c=document.createElement('canvas');
+    c.width=w;c.height=Math.max(1,Math.round(img.height*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(url);
+    pushCap({type:'img',v:c.toDataURL('image/jpeg',.55),ts:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+    res();pulseWorld()};
+  img.src=url})}
+$('#capShot').onclick=async()=>{try{const items=await navigator.clipboard.read();let found=false;
+  for(const it of items){const type=it.types.find(tp=>tp.startsWith('image/'));
+    if(type){const blob=await it.getType(type);await saveImgBlob(blob);found=true;break}}
+  if(found){closeModal($('#capModal'));toast('Screenshot saved ✓')}
+  else toast('No image in clipboard — take a screenshot first, then try again')}
+  catch(e){toast('Clipboard blocked — use "Choose image" instead')}};
+$('#capPick').onclick=()=>$('#capFile').click();
+$('#capFile').onchange=e=>{const f=e.target.files[0];if(!f)return;saveImgBlob(f).then(()=>{closeModal($('#capModal'));toast('Screenshot saved ✓')})};
+
+/* ================= REMINDER QUICK SPRINT ================= */
+$('#remQuick').onclick=()=>{const t=$('#remText').value.trim()||'Quick work sprint';
+  const when=new Date(Date.now()+25*60000);
+  const tm=String(when.getHours()).padStart(2,'0')+':'+String(when.getMinutes()).padStart(2,'0');
+  rems.push({id:Date.now(),t,tm,on:true});store.set('rems',rems);$('#remText').value='';renderRems();toast('Sprint set for '+tm+' ⚡');
+  if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()};
+
+/* ================= DOWNLOAD / INSTALL / PUBLISH ================= */
+let installEvt=null;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;$('#installBtn').style.display=''});
+$('#installBtn').onclick=()=>{if(installEvt){installEvt.prompt();installEvt=null}else toast('Open in Chrome → menu ⋮ → "Add to Home screen"')};
+$('#dlApp').onclick=()=>{const html='<!doctype html>\n'+document.documentElement.outerHTML;
+  const b=new Blob([html],{type:'text/html'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='NEXUM.html';a.click();toast('App file downloaded ✓')};
+
+/* ================= INIT ================= */
+function refreshAll(){renderTasks();renderGrowth();renderHabits();renderPl();renderRems();renderNotes();renderResearch();renderSettings();renderHome();
+  if(profile&&profile.minutes)fSet(profile.minutes)}
+refreshAll();
+fRender();
+try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js')}catch(e){}
+</script>
+</body>
+</html>
